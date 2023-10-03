@@ -50,14 +50,47 @@ resize_cooldown = 0  # To control the cooldown after a resize event
 # For buffering VIDEORESIZE events
 latest_resize_event = None
 
-bot_index = 0
+#p1_bot_index = 0
+#p2_bot_index = 0
+#bot_names = ["Human", "Easy", "Medium", "Hard"]
+#bot_colors = [(200, 200, 200), (220, 220, 220), (240, 240, 240), (250, 250, 250)]
+#def draw_bot_choice_button(screen, font, current_player):
+#    button_width, button_height = 150, 40
+#    button_x = SCREEN_SIZE[0] - (button_width + 10) * current_player
+#    button_y = 60
+#    
+#    # Draw the button
+#    if current_player == 1:
+#        bot_index = p1_bot_index
+#    else:
+#        bot_index = p2_bot_index
+#    pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
+#    label = font.render(bot_names[bot_index], True, (0, 0, 0))
+#    screen.blit(label, (button_x + 30, button_y + 10))
+#    
+#    # Return the button's rectangle for click detection
+#    return (button_x, button_y, button_width, button_height)
+p1_bot_index = 0
+p2_bot_index = 0
 bot_names = ["Human", "Easy", "Medium", "Hard"]
 bot_colors = [(200, 200, 200), (220, 220, 220), (240, 240, 240), (250, 250, 250)]
-def draw_bot_choice_button(screen, font):
+
+def draw_bot_choice_button(screen, font, current_player):
     button_width, button_height = 150, 40
-    button_x = SCREEN_SIZE[0] - button_width - 10
-    button_y = 60
-    
+    button_x = SCREEN_SIZE[0] - (button_width + 10) * (3-current_player)
+    button_y = 80
+
+    # Label for players
+    if current_player == 1:
+        player_label = font.render("Player 1", True, (0,0,0))
+        bot_index = p1_bot_index
+    else:
+        player_label = font.render("Player 2", True, (0,0,0))
+        bot_index = p2_bot_index
+
+    # Display the label
+    screen.blit(player_label, (button_x, button_y - 30))  # Adjust the y-value to position the label above the button
+
     # Draw the button
     pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
     label = font.render(bot_names[bot_index], True, (0, 0, 0))
@@ -69,7 +102,6 @@ def draw_bot_choice_button(screen, font):
 
 # Game loop
 running = True
-selected_bot = 0 # 0=Human, 1=Easy, 2=Medium, 3=Hard
 while running:
 
     for event in pygame.event.get():
@@ -94,8 +126,10 @@ while running:
                         turn_count += 1
 
             # Check for changes in bot type
-            if bot_x <= event.pos[0] <= bot_x + bot_width and bot_y <= event.pos[1] <= bot_y + bot_height:
-                bot_index = (bot_index + 1) % len(bot_names)
+            if bot_x1 <= event.pos[0] <= bot_x1 + bot_width1 and bot_y1 <= event.pos[1] <= bot_y1 + bot_height1:
+                    p1_bot_index = (p1_bot_index + 1) % len(bot_names)
+            if bot_x2 <= event.pos[0] <= bot_x2 + bot_width2 and bot_y2 <= event.pos[1] <= bot_y2 + bot_height2:
+                    p2_bot_index = (p2_bot_index + 1) % len(bot_names)
 
         elif event.type == pygame.VIDEORESIZE:
             latest_resize_event = event
@@ -161,7 +195,8 @@ while running:
     screen.blit(reset_text, (reset_button_x + 25, reset_button_y + 10))
 
     # Draw bot choice buttons
-    bot_x, bot_y, bot_width, bot_height = draw_bot_choice_button(screen, font)
+    bot_x1, bot_y1, bot_width1, bot_height1 = draw_bot_choice_button(screen, font, 1)
+    bot_x2, bot_y2, bot_width2, bot_height2 = draw_bot_choice_button(screen, font, 2)
 
     # Draw colorbar for the score
     score = sum(opinions) / len(opinions)

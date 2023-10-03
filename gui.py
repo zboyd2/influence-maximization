@@ -20,6 +20,7 @@ screen = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
 pygame.display.set_caption("DISE: Dynamic Influence Spread Estimator")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, FONT_SIZE)
+highlighted_node = None
 
 
 def initialize_graph():
@@ -27,7 +28,8 @@ def initialize_graph():
     nodes = []
     while len(nodes) < NUM_NODES:
         new_node = (random.randint(50, SCREEN_SIZE[0] - 50), random.randint(50, SCREEN_SIZE[1] - 50))
-        if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): nodes.append(new_node)
+        if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): 
+            nodes.append(new_node)
     edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < 100]
 
     # Create adjacency list
@@ -50,26 +52,6 @@ resize_cooldown = 0  # To control the cooldown after a resize event
 # For buffering VIDEORESIZE events
 latest_resize_event = None
 
-#p1_bot_index = 0
-#p2_bot_index = 0
-#bot_names = ["Human", "Easy", "Medium", "Hard"]
-#bot_colors = [(200, 200, 200), (220, 220, 220), (240, 240, 240), (250, 250, 250)]
-#def draw_bot_choice_button(screen, font, current_player):
-#    button_width, button_height = 150, 40
-#    button_x = SCREEN_SIZE[0] - (button_width + 10) * current_player
-#    button_y = 60
-#    
-#    # Draw the button
-#    if current_player == 1:
-#        bot_index = p1_bot_index
-#    else:
-#        bot_index = p2_bot_index
-#    pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
-#    label = font.render(bot_names[bot_index], True, (0, 0, 0))
-#    screen.blit(label, (button_x + 30, button_y + 10))
-#    
-#    # Return the button's rectangle for click detection
-#    return (button_x, button_y, button_width, button_height)
 p1_bot_index = 0
 p2_bot_index = 0
 bot_names = ["Human", "Easy", "Medium", "Hard"]
@@ -78,7 +60,7 @@ bot_colors = [(200, 200, 200), (220, 220, 220), (240, 240, 240), (250, 250, 250)
 def draw_bot_choice_button(screen, font, current_player):
     button_width, button_height = 150, 40
     button_x = SCREEN_SIZE[0] - (button_width + 10) * (3-current_player)
-    button_y = 80
+    button_y = 40
 
     # Label for players
     if current_player == 1:
@@ -94,6 +76,19 @@ def draw_bot_choice_button(screen, font, current_player):
     # Draw the button
     pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
     label = font.render(bot_names[bot_index], True, (0, 0, 0))
+    screen.blit(label, (button_x + 30, button_y + 10))
+    
+    # Return the button's rectangle for click detection
+    return (button_x, button_y, button_width, button_height)
+
+def draw_ask_coach(screen, font):
+    button_width, button_height = 150, 40
+    button_x = 10
+    button_y = 50
+
+    # Draw the button
+    pygame.draw.rect(screen, (200,200,200), (button_x, button_y, button_width, button_height))
+    label = font.render("Ask coach?", True, (0, 0, 0))
     screen.blit(label, (button_x + 30, button_y + 10))
     
     # Return the button's rectangle for click detection
@@ -124,12 +119,20 @@ while running:
                         controls[i] = current_player
                         current_player = 1 - current_player
                         turn_count += 1
+                    highlighted_node = None
 
             # Check for changes in bot type
             if bot_x1 <= event.pos[0] <= bot_x1 + bot_width1 and bot_y1 <= event.pos[1] <= bot_y1 + bot_height1:
                     p1_bot_index = (p1_bot_index + 1) % len(bot_names)
             if bot_x2 <= event.pos[0] <= bot_x2 + bot_width2 and bot_y2 <= event.pos[1] <= bot_y2 + bot_height2:
                     p2_bot_index = (p2_bot_index + 1) % len(bot_names)
+
+            # Check for clicks on the Ask Coach button
+            if coach_x <= event.pos[0] <= coach_x + coach_width and coach_y <= event.pos[1] <= coach_y + coach_height:
+                # highlight a random node that is not controlled by the player
+                uncontrolled_nodes = [i for i in range(NUM_NODES) if controls[i] is None]
+                if len(uncontrolled_nodes) > 0:
+                    highlighted_node = random.choice(uncontrolled_nodes)
 
         elif event.type == pygame.VIDEORESIZE:
             latest_resize_event = event
@@ -216,9 +219,16 @@ while running:
     turn_surface = font.render(f"Turn: {turn_count}", True, (0, 0, 0))
     screen.blit(turn_surface, (10, 10))
 
+    # Display ask coach button
+    coach_x, coach_y, coach_width, coach_height = ask_coach_res = draw_ask_coach(screen, font)
+
+    # draw a yellow circle around the highlighted node
+    if highlighted_node is not None:
+        pygame.draw.circle(screen, (0, 255, 0), nodes[highlighted_node], NODE_RADIUS + 45, 20)
+
     # Display current player
     player_surface = font.render(f"Player {current_player + 1}'s Turn", True, (0, 0, 0))
-    screen.blit(player_surface, (SCREEN_SIZE[0] - 150, 10))
+    screen.blit(player_surface, (SCREEN_SIZE[0] - 500, 10))
 
     pygame.display.flip()
     clock.tick(10)

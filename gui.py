@@ -11,9 +11,17 @@ NUM_NODES = 50
 NODE_RADIUS = 20
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
-NODE_COLORS = [(255, 0, 0), (0, 0, 255)]
-CONTROL_MARK_COLORS = [(255, 255, 255), (0, 0, 0)]
 FONT_SIZE = 24
+
+NAVY = (0, 46, 93)
+WHITE = (255, 255, 255)
+ROYAL = (0, 61, 165)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+BLACK = (0,0,0)
+
+NODE_COLORS = [RED, BLUE]
+CONTROL_MARK_COLORS = [WHITE, BLACK]
 
 # Initialize screen and clock
 screen = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
@@ -21,6 +29,21 @@ pygame.display.set_caption("DISE: Dynamic Influence Spread Estimator")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, FONT_SIZE)
 highlighted_node = None
+
+corner_radius = 10
+def draw_rounded_rect(screen, color, rect, corner_radius):
+    """Draw a rounded rectangle"""
+    x, y, width, height = rect
+    
+    # Draw the main body of the rectangle
+    pygame.draw.rect(screen, color, (x, y + corner_radius, width, height - 2*corner_radius))
+    pygame.draw.rect(screen, color, (x + corner_radius, y, width - 2*corner_radius, height))
+    
+    # Draw the four rounded corners
+    pygame.draw.circle(screen, color, (x + corner_radius, y + corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + width - corner_radius, y + corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + corner_radius, y + height - corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + width - corner_radius, y + height - corner_radius), corner_radius)
 
 
 def initialize_graph():
@@ -74,7 +97,8 @@ def draw_bot_choice_button(screen, font, current_player):
     screen.blit(player_label, (button_x, button_y - 30))  # Adjust the y-value to position the label above the button
 
     # Draw the button
-    pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
+    draw_rounded_rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height), corner_radius)
+
     label = font.render(bot_names[bot_index], True, (0, 0, 0))
     screen.blit(label, (button_x + 30, button_y + 10))
     
@@ -87,7 +111,7 @@ def draw_ask_coach(screen, font):
     button_y = 50
 
     # Draw the button
-    pygame.draw.rect(screen, (200,200,200), (button_x, button_y, button_width, button_height))
+    draw_rounded_rect(screen, (200, 200, 200), (button_x, button_y, button_width, button_height), corner_radius)
     label = font.render("Ask coach?", True, (0, 0, 0))
     screen.blit(label, (button_x + 30, button_y + 10))
     
@@ -161,7 +185,7 @@ while running:
         latest_resize_event = None
 
         # Explicitly fill screen with a background color
-        screen.fill((245, 245, 245))
+        screen.fill(WHITE)
         pygame.display.flip()
 
     # Update Opinions
@@ -177,7 +201,7 @@ while running:
     opinions = new_opinions
 
     # Draw UI
-    screen.fill((245, 245, 245))
+    screen.fill(WHITE)
 
     # Draw edges
     for edge in edges:
@@ -193,7 +217,7 @@ while running:
     # Drawing the Reset button
     reset_button_color = (200, 200, 200)  # Gray color
     reset_button_x, reset_button_y, reset_button_w, reset_button_h = 10, SCREEN_SIZE[1] - 60, 100, 40
-    pygame.draw.rect(screen, reset_button_color, (reset_button_x, reset_button_y, reset_button_w, reset_button_h))
+    draw_rounded_rect(screen, reset_button_color, (reset_button_x, reset_button_y, reset_button_w, reset_button_h), 10)
     reset_text = font.render("Reset", True, (0, 0, 0))
     screen.blit(reset_text, (reset_button_x + 25, reset_button_y + 10))
 

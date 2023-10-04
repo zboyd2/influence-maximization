@@ -519,3 +519,136 @@ def generate_matchup_influences(num_nodes=10, num_graphs=1000):
 # graph = random_graph(10)
 # print(minimax_algorithm_vs_greedy(alternatingStep_Wilson.ex7, np.array([1, 2]), 2, mover="first"))
 # print(minimax_algorithm(alternatingStep_Wilson.ex7, np.array([1, 2]), 2))
+
+
+
+
+
+
+
+
+
+
+
+########################################################################################################################
+# Algorithms for arbitrary nodes_per_team ##############################################################################
+
+
+def gui_easy_opponent(graph_laplacian, config, depth):
+    return np.random.choice(np.setdiff1d(np.arange(graph_laplacian.shape[0]), config))
+
+
+def gui_greedy_algorithm(graph_laplacian, config, depth):
+    """This function takes in the graph Laplacian, the previously
+    selected boundary nodes as an iterable, and the number of nodes
+    per team. It returns the best node to add to the boundary set
+    using the greedy algorithm.
+
+    Args:
+        graph_laplacian ((n,n) ndarray): The graph Laplacian for
+        the given graph
+
+        config (ndarray): The previously selected boundary nodes
+        in sequential order alternating team
+
+        nodes_per_team (int): The number of nodes per team
+
+    Returns:
+        best_node (int): The best node to add to the boundary set
+    """
+
+    if type(config) is not np.ndarray:
+        config = np.array(config)
+
+    turn = config.shape[0] % 2
+    nodes = np.arange(graph_laplacian.shape[0])
+    nodes_remaining = np.setdiff1d(nodes, config)
+
+    best_node = None
+    best_value = -np.inf
+
+    if config.shape[0] == 0:  # First move
+        return np.argmax(np.diag(graph_laplacian))
+
+    # elif config.shape[0] >= nodes_per_team * 2:  # Game is over
+    #     return None
+
+    else:  # Not first move
+        for n in nodes_remaining:  # Check each node to see which one is best
+
+            new_val = get_influence(graph_laplacian,
+                                    np.append(config, n).astype(int))[turn]
+
+            if new_val > best_value:
+                best_value = new_val
+                best_node = n
+
+    return best_node
+
+
+def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
+    """ Optimized using alpha-beta pruning.
+
+    This function takes in the graph Laplacian, the previously
+    selected boundary nodes as an iterable, and the number of nodes
+    per team. It returns the best node to add to the boundary set
+    using the minimax algorithm.
+
+    Args:
+        graph_laplacian ((n,n) ndarray): The graph Laplacian for
+        the given graph
+
+        config (ndarray): The previously selected boundary nodes
+        in sequential order alternating team
+
+        nodes_per_team (int): The number of nodes per team
+
+    Returns:
+        best_node (int): The best node to add to the boundary set
+    """
+
+    def minimax_recursive_step(config, depth, alpha, beta):
+
+        if type(config) is not np.ndarray:
+            config = np.array(config)
+
+        turn = config.shape[0] % 2  # 0 for maximizing team, 1 for minimizing team
+
+        if depth == 0:
+            return get_influence(graph_laplacian, config.astype(int))[0], None
+
+        nodes_remaining = np.setdiff1d(np.arange(graph_laplacian.shape[0]), config)
+
+        if turn == 0:  # Maximizing team
+            value = -np.inf
+            best_node = None
+            for node in nodes_remaining:
+                new_value, _ = minimax_recursive_step(np.append(config, node), depth - 1, alpha, beta)
+                # if the value is updated, update the best move
+                if value < new_value:
+                    value = new_value
+                    best_node = node
+                # Alpha-Beta Pruning
+                if value > beta:
+                    break
+                alpha = max(alpha, value)
+            return value, best_node
+
+        if turn == 1:  # Minimizing team
+            value = np.inf
+            best_node = None
+            for node in nodes_remaining:
+                new_value, _ = minimax_recursive_step(np.append(config, node), depth - 1, alpha, beta)
+                # if the value is updated, update the best move
+                if value > new_value:
+                    value = new_value
+                    best_node = node
+                # Alpha-Beta Pruning
+                if value < alpha:
+                    break
+                beta = min(beta, value)
+            return value, best_node
+
+    return minimax_recursive_step(config, depth, -np.inf, np.inf)[1]
+
+

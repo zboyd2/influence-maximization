@@ -53,11 +53,22 @@ def draw_rounded_rect(screen, color, rect, corner_radius):
 def initialize_graph():
     # Initialize Nodes and Edges
     nodes = []
+
+    # Scaled placement margins
+    x_margin = int(SCREEN_SIZE[0] * 0.10)
+    y_margin = int(SCREEN_SIZE[1] * 0.12)
+
+    # Calculate the diagonal of the screen
+    screen_diagonal = np.linalg.norm(np.array(SCREEN_SIZE))
+    # Set edge threshold as a fraction of the diagonal
+    edge_threshold = screen_diagonal * 0.125
+
     while len(nodes) < NUM_NODES:
-        new_node = (random.randint(50, SCREEN_SIZE[0] - 50), random.randint(50, SCREEN_SIZE[1] - 50))
+        new_node = (random.randint(x_margin, SCREEN_SIZE[0] - x_margin), random.randint(y_margin, SCREEN_SIZE[1] - y_margin))
         if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): 
             nodes.append(new_node)
-    edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < 100]
+
+    edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
 
     # Create adjacency list
     adj_list = [[] for _ in range(NUM_NODES)]
@@ -168,6 +179,7 @@ while running:
             if reset_button_x <= x <= reset_button_x + reset_button_w and reset_button_y <= y <= reset_button_y + reset_button_h:
                 current_player = 0
                 turn_count = 0
+                nodes, edges, adj_list = initialize_graph()
                 controls = [None for _ in range(NUM_NODES)]
                 opinions = [0 for _ in range(NUM_NODES)]  # Reset opinions to neutral
                 config = np.array([])

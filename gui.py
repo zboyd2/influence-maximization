@@ -12,7 +12,7 @@ pygame.init()
 # Constants
 SCREEN_SIZE = (800, 600)
 NUM_NODES = 50
-NODE_RADIUS = 20
+NODE_RADIUS = 15
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
 FONT_SIZE = 24
@@ -61,7 +61,7 @@ def initialize_graph():
     # Calculate the diagonal of the screen
     screen_diagonal = np.linalg.norm(np.array(SCREEN_SIZE))
     # Set edge threshold as a fraction of the diagonal
-    edge_threshold = screen_diagonal * 0.125
+    edge_threshold = screen_diagonal * 0.095
 
     while len(nodes) < NUM_NODES:
         new_node = (random.randint(x_margin, SCREEN_SIZE[0] - x_margin), random.randint(y_margin, SCREEN_SIZE[1] - y_margin))

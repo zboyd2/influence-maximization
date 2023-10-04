@@ -15,15 +15,39 @@ NUM_NODES = 50
 NODE_RADIUS = 20
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
-NODE_COLORS = [(255, 0, 0), (0, 0, 255)]
-CONTROL_MARK_COLORS = [(255, 255, 255), (0, 0, 0)]
 FONT_SIZE = 24
+
+NAVY = (0, 46, 93)
+WHITE = (255, 255, 255)
+ROYAL = (0, 61, 165)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+BLACK = (0,0,0)
+
+NODE_COLORS = [RED, BLUE]
+CONTROL_MARK_COLORS = [WHITE, BLACK]
 
 # Initialize screen and clock
 screen = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
 pygame.display.set_caption("DISE: Dynamic Influence Spread Estimator")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, FONT_SIZE)
+highlighted_node = None
+
+corner_radius = 10
+def draw_rounded_rect(screen, color, rect, corner_radius):
+    """Draw a rounded rectangle"""
+    x, y, width, height = rect
+    
+    # Draw the main body of the rectangle
+    pygame.draw.rect(screen, color, (x, y + corner_radius, width, height - 2*corner_radius))
+    pygame.draw.rect(screen, color, (x + corner_radius, y, width - 2*corner_radius, height))
+    
+    # Draw the four rounded corners
+    pygame.draw.circle(screen, color, (x + corner_radius, y + corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + width - corner_radius, y + corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + corner_radius, y + height - corner_radius), corner_radius)
+    pygame.draw.circle(screen, color, (x + width - corner_radius, y + height - corner_radius), corner_radius)
 
 
 def initialize_graph():
@@ -31,7 +55,8 @@ def initialize_graph():
     nodes = []
     while len(nodes) < NUM_NODES:
         new_node = (random.randint(50, SCREEN_SIZE[0] - 50), random.randint(50, SCREEN_SIZE[1] - 50))
-        if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): nodes.append(new_node)
+        if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): 
+            nodes.append(new_node)
     edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < 100]
 
     # Create adjacency list
@@ -72,26 +97,6 @@ resize_cooldown = 0  # To control the cooldown after a resize event
 # For buffering VIDEORESIZE events
 latest_resize_event = None
 
-#p1_bot_index = 0
-#p2_bot_index = 0
-#bot_names = ["Human", "Easy", "Medium", "Hard"]
-#bot_colors = [(200, 200, 200), (220, 220, 220), (240, 240, 240), (250, 250, 250)]
-#def draw_bot_choice_button(screen, font, current_player):
-#    button_width, button_height = 150, 40
-#    button_x = SCREEN_SIZE[0] - (button_width + 10) * current_player
-#    button_y = 60
-#    
-#    # Draw the button
-#    if current_player == 1:
-#        bot_index = p1_bot_index
-#    else:
-#        bot_index = p2_bot_index
-#    pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
-#    label = font.render(bot_names[bot_index], True, (0, 0, 0))
-#    screen.blit(label, (button_x + 30, button_y + 10))
-#    
-#    # Return the button's rectangle for click detection
-#    return (button_x, button_y, button_width, button_height)
 p1_bot_index = 0
 p2_bot_index = 0
 bot_names = ["Human", "Easy", "Medium", "Hard"]
@@ -111,7 +116,7 @@ first_move = True
 def draw_bot_choice_button(screen, font, current_player):
     button_width, button_height = 150, 40
     button_x = SCREEN_SIZE[0] - (button_width + 10) * (3-current_player)
-    button_y = 80
+    button_y = 40
 
     # Label for players
     if current_player == 1:
@@ -125,8 +130,22 @@ def draw_bot_choice_button(screen, font, current_player):
     screen.blit(player_label, (button_x, button_y - 30))  # Adjust the y-value to position the label above the button
 
     # Draw the button
-    pygame.draw.rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height))
+    draw_rounded_rect(screen, bot_colors[bot_index], (button_x, button_y, button_width, button_height), corner_radius)
+
     label = font.render(bot_names[bot_index], True, (0, 0, 0))
+    screen.blit(label, (button_x + 30, button_y + 10))
+    
+    # Return the button's rectangle for click detection
+    return (button_x, button_y, button_width, button_height)
+
+def draw_ask_coach(screen, font):
+    button_width, button_height = 150, 40
+    button_x = 10
+    button_y = 50
+
+    # Draw the button
+    draw_rounded_rect(screen, (200, 200, 200), (button_x, button_y, button_width, button_height), corner_radius)
+    label = font.render("Ask coach?", True, (0, 0, 0))
     screen.blit(label, (button_x + 30, button_y + 10))
     
     # Return the button's rectangle for click detection
@@ -144,6 +163,7 @@ while running:
         # Check for button clicks
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
+
             # Check for clicks on the Reset button
             if reset_button_x <= x <= reset_button_x + reset_button_w and reset_button_y <= y <= reset_button_y + reset_button_h:
                 current_player = 0
@@ -154,6 +174,11 @@ while running:
                 first_move = True
                 p1_bot_index = 0
                 p2_bot_index = 0
+
+                nodes, edges, adj_list = initialize_graph()
+
+                # Get Laplacian matrix
+                laplacian = get_graph_laplacian(edges)
                 continue  # Skip the rest of this loop iteration
                 # Check for changes in bot type
             elif bot_x1 <= event.pos[0] <= bot_x1 + bot_width1 and bot_y1 <= event.pos[1] <= bot_y1 + bot_height1:
@@ -161,8 +186,15 @@ while running:
                 click_time = time.perf_counter()
             elif bot_x2 <= event.pos[0] <= bot_x2 + bot_width2 and bot_y2 <= event.pos[1] <= bot_y2 + bot_height2:
                 p2_bot_index = (p2_bot_index + 1) % len(bot_names)
-            elif event.type == pygame.VIDEORESIZE:
-                latest_resize_event = event
+
+            # Check for clicks on the Ask Coach button
+            elif coach_x <= event.pos[0] <= coach_x + coach_width and coach_y <= event.pos[
+                1] <= coach_y + coach_height:
+                # highlight a random node that is not controlled by the player
+                highlighted_node = im.gui_minimax_algorithm_opt(laplacian, config, depth)
+
+        elif event.type == pygame.VIDEORESIZE:
+            latest_resize_event = event
 
         if turn_count < NUM_TURNS * 2:  # While turns remain
             # Player 1 or Player 2
@@ -178,6 +210,7 @@ while running:
                                     current_player = 1 - current_player
                                     turn_count += 1
                                     config = np.append(config, i)
+                                highlighted_node = None
                 elif time.perf_counter() - start_time_p2 > wait_time:
                     if p1_bot_index == 1:
                         opponent = im.gui_easy_opponent
@@ -206,14 +239,13 @@ while running:
 
                         # Check for clicks on nodes
                         for i, (nx, ny) in enumerate(nodes):
-
                             if np.linalg.norm(np.array([x, y]) - np.array([nx, ny])) < NODE_RADIUS:
                                 if controls[i] is None:
                                     controls[i] = current_player
                                     current_player = 1 - current_player
                                     turn_count += 1
                                     config = np.append(config, i)
-
+                                highlighted_node = None
                 elif time.perf_counter() - start_time_p1 > wait_time:
                     if p2_bot_index == 1:
                         opponent = im.gui_easy_opponent
@@ -278,7 +310,6 @@ while running:
         #     if bot_x2 <= event.pos[0] <= bot_x2 + bot_width2 and bot_y2 <= event.pos[1] <= bot_y2 + bot_height2:
         #             p2_bot_index = (p2_bot_index + 1) % len(bot_names)
 
-
     if latest_resize_event and pygame.time.get_ticks() - resize_cooldown > 500: # 500ms cool-down
         # Get new dimensions
         new_w, new_h = latest_resize_event.w, latest_resize_event.h
@@ -302,7 +333,7 @@ while running:
         latest_resize_event = None
 
         # Explicitly fill screen with a background color
-        screen.fill((245, 245, 245))
+        screen.fill(WHITE)
         pygame.display.flip()
 
     # Update Opinions
@@ -318,7 +349,7 @@ while running:
     opinions = new_opinions
 
     # Draw UI
-    screen.fill((245, 245, 245))
+    screen.fill(WHITE)
 
     # Draw edges
     for edge in edges:
@@ -334,7 +365,7 @@ while running:
     # Drawing the Reset button
     reset_button_color = (200, 200, 200)  # Gray color
     reset_button_x, reset_button_y, reset_button_w, reset_button_h = 10, SCREEN_SIZE[1] - 60, 100, 40
-    pygame.draw.rect(screen, reset_button_color, (reset_button_x, reset_button_y, reset_button_w, reset_button_h))
+    draw_rounded_rect(screen, reset_button_color, (reset_button_x, reset_button_y, reset_button_w, reset_button_h), 10)
     reset_text = font.render("Reset", True, (0, 0, 0))
     screen.blit(reset_text, (reset_button_x + 25, reset_button_y + 10))
 
@@ -360,9 +391,16 @@ while running:
     turn_surface = font.render(f"Turn: {turn_count}", True, (0, 0, 0))
     screen.blit(turn_surface, (10, 10))
 
+    # Display ask coach button
+    coach_x, coach_y, coach_width, coach_height = ask_coach_res = draw_ask_coach(screen, font)
+
+    # draw a yellow circle around the highlighted node
+    if highlighted_node is not None:
+        pygame.draw.circle(screen, (0, 255, 0), nodes[highlighted_node], NODE_RADIUS + 45, 20)
+
     # Display current player
     player_surface = font.render(f"Player {current_player + 1}'s Turn", True, (0, 0, 0))
-    screen.blit(player_surface, (SCREEN_SIZE[0] - 150, 10))
+    screen.blit(player_surface, (SCREEN_SIZE[0] - 500, 10))
 
     pygame.display.flip()
     clock.tick(10)

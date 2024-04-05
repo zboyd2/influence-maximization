@@ -1,3 +1,4 @@
+import sys
 import time
 
 import pygame
@@ -162,7 +163,19 @@ def draw_ask_coach(screen, font):
     # Return the button's rectangle for click detection
     return (button_x, button_y, button_width, button_height)
 
-
+#Drawing End Game Button
+def draw_end_game(screen, font):
+    button_width, button_height = 300, 200
+    #button Coordinates
+    button_x = 250
+    button_y = 180
+    # draw the button
+    draw_rounded_rect(screen, (150, 100, 200), (button_x, button_y, button_width, button_height), corner_radius)
+    label = font.render("GAME OVER", True, (0, 0, 0))
+    # Centering label within Button
+    label_x = button_x + (button_width - label.get_width()) // 2
+    label_y = button_y + (button_height - label.get_height()) // 2
+    screen.blit(label, (label_x, label_y))
 # Game loop
 running = True
 while running:
@@ -273,11 +286,9 @@ while running:
                     turn_count += 1
 
                 start_time_p2 = time.perf_counter()  # Reset the timer
-
         else:
             # TODO Display the winner
             pass
-
 
 
         # elif event.type == pygame.MOUSEBUTTONDOWN or human_went:
@@ -413,6 +424,9 @@ while running:
     # Display current player
     player_surface = font.render(f"Player {current_player + 1}'s Turn", True, (0, 0, 0))
     screen.blit(player_surface, (SCREEN_SIZE[0] - 500, 10))
+
+    if turn_count >= NUM_TURNS*2:
+        draw_end_game(screen, font)
 
     pygame.display.flip()
     clock.tick(10)

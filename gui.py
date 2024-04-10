@@ -12,7 +12,7 @@ pygame.init()
 
 # Constants
 SCREEN_SIZE = (800, 600)
-NUM_NODES = 50
+NUM_NODES = random.randint(28, 52)
 NODE_RADIUS = 15
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
@@ -164,14 +164,21 @@ def draw_ask_coach(screen, font):
     return (button_x, button_y, button_width, button_height)
 
 #Drawing End Game Button
-def draw_end_game(screen, font):
+def draw_end_game(screen, font, winner):
     button_width, button_height = 300, 200
     #button Coordinates
     button_x = 250
     button_y = 180
-    # draw the button
-    draw_rounded_rect(screen, (150, 100, 200), (button_x, button_y, button_width, button_height), corner_radius)
-    label = font.render("GAME OVER", True, (0, 0, 0))
+    corner_radius = 20
+    #winner box colors
+    if winner == "Player 1":
+        button_color = (220, 0, 0)
+    elif winner == "Player 2":
+        button_color = (0, 0, 220)
+    else:
+        button_color = (150, 100, 200)
+    draw_rounded_rect(screen, button_color, (button_x, button_y, button_width, button_height), corner_radius)
+    label = font.render(f"{winner} Wins", True, (255, 255, 255))
     # Centering label within Button
     label_x = button_x + (button_width - label.get_width()) // 2
     label_y = button_y + (button_height - label.get_height()) // 2
@@ -425,8 +432,16 @@ while running:
     player_surface = font.render(f"Player {current_player + 1}'s Turn", True, (0, 0, 0))
     screen.blit(player_surface, (SCREEN_SIZE[0] - 500, 10))
 
+    #Display Winner box
     if turn_count >= NUM_TURNS*2:
-        draw_end_game(screen, font)
+        average_opinion = sum(opinions) / len(opinions)
+        if average_opinion > 0:
+            winner = "Player 2"
+        elif average_opinion < 0:
+            winner = "Player 1"
+        else:
+            winner = "Draw"
+        draw_end_game(screen, font, winner)
 
     pygame.display.flip()
     clock.tick(10)

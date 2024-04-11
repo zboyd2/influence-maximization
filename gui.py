@@ -4,7 +4,8 @@ import time
 import pygame
 import random
 import numpy as np
-
+import scipy.stats as ss
+import networkx as nx
 import influence_maximization_algorithms as im
 
 # Initialize Pygame
@@ -51,26 +52,88 @@ def draw_rounded_rect(screen, color, rect, corner_radius):
     pygame.draw.circle(screen, color, (x + width - corner_radius, y + height - corner_radius), corner_radius)
 
 
-def initialize_graph():
-    # Initialize Nodes and Edges
-    nodes = []
-
+def initialize_graph(approach=6):
+    global NUM_NODES 
     # Scaled placement margins
     x_margin = int(SCREEN_SIZE[0] * 0.10)
     y_margin = int(SCREEN_SIZE[1] * 0.12)
 
-    # Calculate the diagonal of the screen
-    screen_diagonal = np.linalg.norm(np.array(SCREEN_SIZE))
-    # Set edge threshold as a fraction of the diagonal
-    edge_threshold = screen_diagonal * 0.095
+    if approach <= 1: #Positions nodes randomly and draws edges according to an approach below
+        nodes = []
+        screen_diagonal = np.linalg.norm(np.array(SCREEN_SIZE))
+        edge_threshold = screen_diagonal * 0.095  #Set edge threshold as a fraction of the diagonal
 
-    while len(nodes) < NUM_NODES:
-        new_node = (random.randint(x_margin, SCREEN_SIZE[0] - x_margin), random.randint(y_margin, SCREEN_SIZE[1] - y_margin))
-        if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): 
-            nodes.append(new_node)
+        while len(nodes) < NUM_NODES:
+            new_node = (random.randint(x_margin, SCREEN_SIZE[0] - x_margin), random.randint(y_margin, SCREEN_SIZE[1] - y_margin))
+            if all(np.linalg.norm(np.array(new_node) - np.array(existing_node)) > 2 * NODE_RADIUS for existing_node in nodes): 
+                nodes.append(new_node)
 
-    edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
+        if(approach == 0): #Draw edge between nodes if they are closer than the threshold distance
+            edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
+        else: #Draw edges according to a gaussian distribution based on the distance between nodes
+            edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if 2 * (1 - ss.norm.cdf((np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) / (NODE_RADIUS * 2)), loc=0, scale=3)) > random.random()]
 
+    else: #Generate graph based on a predefined NetworkX graph
+        if approach == 2:
+            G = nx.full_rary_tree(4, NUM_NODES)
+            positions = nx.kamada_kawai_layout(G)
+        elif approach == 3:
+            G = nx.ladder_graph(int(NUM_NODES / 2))
+            positions = nx.spring_layout(G)
+        elif approach == 4: #square lattice 
+            #Pick a length for a length x length square lattice with approximately NUM_NODES nodes
+            length = int(np.floor(np.sqrt(NUM_NODES)))
+            NUM_NODES = int(length ** 2)
+            H = nx.grid_graph(dim=(length, length))
+            node_cords = list(H.nodes)
+            adjusted_cords = np.interp(node_cords, [0, length], [-1, 1])
+            positions = {i : adjusted_cords[i] for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_cords[i] : i  for i in range(NUM_NODES)})
+        elif approach == 5: #hexagon lattice
+            #Pick an n and m that will create an n x m hexagon lattice with approximately NUM_NODES nodes
+            n = int(np.rint(np.sqrt(NUM_NODES)) / 2)
+            m = int(np.rint((NUM_NODES - 2 * n) / (2 * n + 2)))
+            NUM_NODES = 2 * (n + n * m + m)
+
+            H = nx.hexagonal_lattice_graph(n, m)
+            node_names = [*nx.get_node_attributes(H, 'pos')]
+            node_cords = [*nx.get_node_attributes(H, 'pos').values()]
+            x_cords = [x for x, _ in node_cords]
+            y_cords = [y for _, y in node_cords]
+            adjusted_x_cords = np.interp(x_cords, [0, np.max(x_cords)], [-1, 1])
+            adjusted_y_cords = np.interp(y_cords, [0, np.max(y_cords)], [-1, 1])
+            positions = {i : np.array([adjusted_x_cords[i], adjusted_y_cords[i]]) for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(NUM_NODES)})
+        elif approach == 6: #triangle lattice
+            #Pick an n and m that will create an n x m triangular lattice with approximately NUM_NODES nodes
+            n = int(np.sqrt(NUM_NODES))
+            if n % 2 == 0:
+                n += 1
+            m = int(np.rint((2 * NUM_NODES - 2 * n - 2) / (n + 1)))
+            NUM_NODES = int(0.5 * n * m + 0.5 * m + n + 1)
+
+            H = nx.triangular_lattice_graph(n, m)
+            node_names = [*nx.get_node_attributes(H, 'pos')]
+            node_cords = [*nx.get_node_attributes(H, 'pos').values()]
+            x_cords = [x for x, _ in node_cords]
+            y_cords = [y for _, y in node_cords]
+            adjusted_x_cords = np.interp(x_cords, [0, np.max(x_cords)], [-1, 1])
+            adjusted_y_cords = np.interp(y_cords, [0, np.max(y_cords)], [-1, 1])
+            positions = {i : np.array([adjusted_x_cords[i], adjusted_y_cords[i]]) for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(NUM_NODES)})
+        else:
+            G = nx.cycle_graph(NUM_NODES)
+            positions = nx.spring_layout(G)
+        
+        #Get edges and node coordinates based on the screen sizing
+        nodes = []
+        edges = G.edges
+        for key in positions:
+            #Scale node positions to fit in game screen
+            x_cord = x_margin + (SCREEN_SIZE[0] - 2 * x_margin) * ((positions[key][0] + 1) / 2)
+            y_cord = y_margin + (SCREEN_SIZE[1] - 2 * y_margin) * ((positions[key][1] + 1) / 2)
+            nodes.append((x_cord, y_cord))
+    
     # Create adjacency list
     adj_list = [[] for _ in range(NUM_NODES)]
     for i, j in edges:
@@ -199,7 +262,6 @@ while running:
             if reset_button_x <= x <= reset_button_x + reset_button_w and reset_button_y <= y <= reset_button_y + reset_button_h:
                 current_player = 0
                 turn_count = 0
-                nodes, edges, adj_list = initialize_graph()
                 controls = [None for _ in range(NUM_NODES)]
                 opinions = [0 for _ in range(NUM_NODES)]  # Reset opinions to neutral
                 config = np.array([])
@@ -212,7 +274,7 @@ while running:
                 # Get Laplacian matrix
                 laplacian = get_graph_laplacian(edges)
                 continue  # Skip the rest of this loop iteration
-                # Check for changes in bot type
+            # Check for changes in bot type
             elif bot_x1 <= event.pos[0] <= bot_x1 + bot_width1 and bot_y1 <= event.pos[1] <= bot_y1 + bot_height1:
                 p1_bot_index = (p1_bot_index + 1) % len(bot_names)
                 click_time = time.perf_counter()

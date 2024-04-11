@@ -5,7 +5,6 @@ import random
 import numpy as np
 import scipy.stats as ss
 import networkx as nx
-
 import influence_maximization_algorithms as im
 
 # Initialize Pygame
@@ -13,7 +12,7 @@ pygame.init()
 
 # Constants
 SCREEN_SIZE = (800, 600)
-NUM_NODES = 50
+NUM_NODES = 100
 NODE_RADIUS = 15
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
@@ -52,7 +51,8 @@ def draw_rounded_rect(screen, color, rect, corner_radius):
     pygame.draw.circle(screen, color, (x + width - corner_radius, y + height - corner_radius), corner_radius)
 
 
-def initialize_graph(approach=1):
+def initialize_graph(approach=4):
+    global NUM_NODES 
     # Scaled placement margins
     x_margin = int(SCREEN_SIZE[0] * 0.10)
     y_margin = int(SCREEN_SIZE[1] * 0.12)
@@ -79,10 +79,35 @@ def initialize_graph(approach=1):
         elif approach == 3:
             G = nx.ladder_graph(int(NUM_NODES / 2))
             positions = nx.spring_layout(G)
+        elif approach == 4: #square lattice 
+            #Pick a length for a length x length square lattice with approximately NUM_NODES nodes
+            length = int(np.floor(np.sqrt(NUM_NODES)))
+            NUM_NODES = int(length ** 2)
+            H = nx.grid_graph(dim=(length, length))
+            node_cords = list(H.nodes)
+            adjusted_cords = np.interp(node_cords, [0, length], [-1, 1])
+            positions = {i : adjusted_cords[i] for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_cords[i] : i  for i in range(NUM_NODES)})
+        elif approach == 5: #hexagon lattice
+            #Pick an n and m that will create an n x m hexagon lattice with approximately NUM_NODES nodes
+            n = int(np.rint(np.sqrt(NUM_NODES)) / 2)
+            m = int(np.rint((NUM_NODES - 2 * n) / (2 * n + 2)))
+            NUM_NODES = 2 * (n + n * m + m)
+
+            H = nx.hexagonal_lattice_graph(n, m)
+            node_names = [*nx.get_node_attributes(H, 'pos')]
+            node_cords = [*nx.get_node_attributes(H, 'pos').values()]
+            x_cords = [x for x, _ in node_cords]
+            y_cords = [y for _, y in node_cords]
+            adjusted_x_cords = np.interp(x_cords, [0, np.max(x_cords)], [-1, 1])
+            adjusted_y_cords = np.interp(y_cords, [0, np.max(y_cords)], [-1, 1])
+            positions = {i : np.array([adjusted_x_cords[i], adjusted_y_cords[i]]) for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(NUM_NODES)})
         else:
             G = nx.cycle_graph(NUM_NODES)
             positions = nx.spring_layout(G)
         
+        #Get edges and node coordinates based on the screen sizing
         nodes = []
         edges = G.edges
         for key in positions:
@@ -212,7 +237,7 @@ while running:
                 # Get Laplacian matrix
                 laplacian = get_graph_laplacian(edges)
                 continue  # Skip the rest of this loop iteration
-                # Check for changes in bot type
+            # Check for changes in bot type
             elif bot_x1 <= event.pos[0] <= bot_x1 + bot_width1 and bot_y1 <= event.pos[1] <= bot_y1 + bot_height1:
                 p1_bot_index = (p1_bot_index + 1) % len(bot_names)
                 click_time = time.perf_counter()

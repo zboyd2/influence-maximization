@@ -12,7 +12,7 @@ pygame.init()
 
 # Constants
 SCREEN_SIZE = (800, 600)
-NUM_NODES = 100
+NUM_NODES = 50
 NODE_RADIUS = 15
 CONTROL_MARK_RADIUS = 5
 LINE_THICKNESS = 2
@@ -51,7 +51,7 @@ def draw_rounded_rect(screen, color, rect, corner_radius):
     pygame.draw.circle(screen, color, (x + width - corner_radius, y + height - corner_radius), corner_radius)
 
 
-def initialize_graph(approach=4):
+def initialize_graph(approach=6):
     global NUM_NODES 
     # Scaled placement margins
     x_margin = int(SCREEN_SIZE[0] * 0.10)
@@ -95,6 +95,23 @@ def initialize_graph(approach=4):
             NUM_NODES = 2 * (n + n * m + m)
 
             H = nx.hexagonal_lattice_graph(n, m)
+            node_names = [*nx.get_node_attributes(H, 'pos')]
+            node_cords = [*nx.get_node_attributes(H, 'pos').values()]
+            x_cords = [x for x, _ in node_cords]
+            y_cords = [y for _, y in node_cords]
+            adjusted_x_cords = np.interp(x_cords, [0, np.max(x_cords)], [-1, 1])
+            adjusted_y_cords = np.interp(y_cords, [0, np.max(y_cords)], [-1, 1])
+            positions = {i : np.array([adjusted_x_cords[i], adjusted_y_cords[i]]) for i in range(NUM_NODES)}
+            G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(NUM_NODES)})
+        elif approach == 6: #triangle lattice
+            #Pick an n and m that will create an n x m triangular lattice with approximately NUM_NODES nodes
+            n = int(np.sqrt(NUM_NODES))
+            if n % 2 == 0:
+                n += 1
+            m = int(np.rint((2 * NUM_NODES - 2 * n - 2) / (n + 1)))
+            NUM_NODES = int(0.5 * n * m + 0.5 * m + n + 1)
+
+            H = nx.triangular_lattice_graph(n, m)
             node_names = [*nx.get_node_attributes(H, 'pos')]
             node_cords = [*nx.get_node_attributes(H, 'pos').values()]
             x_cords = [x for x, _ in node_cords]

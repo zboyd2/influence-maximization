@@ -77,7 +77,7 @@ def scale_nodes_to_screen(positions):
         the nodes with keys being the node names and values being coordinate tuples
 
     Returns:
-        a list of node coordinate tuples, scaled to fit well in the game screen
+        a list of node coordinate tuples, scaled to fit well in the graphgame screen
     """
 
     x_range = SCREEN_SIZE[0] - 2 * X_MARGIN

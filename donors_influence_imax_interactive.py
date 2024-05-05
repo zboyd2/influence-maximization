@@ -4,7 +4,7 @@ import numpy as np
 import influence_maximization_algorithms as im
 
 
-# create a game system that askes for input
+# create a graphgame system that askes for input
 def game_setup(nodes_question=False):
     # Select opponent difficulty
     # Choose number of nodes
@@ -112,7 +112,7 @@ def main():
     # Game setup
     game_setup_list = game_setup(nodes_question=True)
 
-    # Play the game
+    # Play the graphgame
     influence, player_number = gameplay(*game_setup_list)
 
     # Print the influence

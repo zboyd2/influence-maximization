@@ -17,7 +17,7 @@ WHITE = (255, 255, 255)
 ROYAL = (0, 61, 165)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-BLACK = (0,0,0)
+BLACK = (0, 0, 0)
 
 NODE_COLORS = [RED, BLUE]
 CONTROL_MARK_COLORS = [WHITE, BLACK]
@@ -100,7 +100,7 @@ laplacian = get_graph_laplacian(edges)
 opinions = [0 for _ in range(NUM_NODES)]
 controls = [None for _ in range(NUM_NODES)]
 
-# Initialize game state
+# Initialize graphgame state
 current_player = 0
 turn_count = 0
 resize_cooldown = 0  # To control the cooldown after a resize event

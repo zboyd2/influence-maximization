@@ -15,8 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
-from influence_game.views import home
+from influence_game.views import home, random_proximity_view
 
 urlpatterns = [
     path('', home, name='home'),
+    path('api/random_proximity/', random_proximity_view, name='random_proximity'),
 ]

@@ -32,8 +32,40 @@ button {
     background-color: #007BFF;
     color: white;
     cursor: pointer;
+    align-items: center;
 }
 
 button:hover {
     background-color: #0056b3;
+}
+
+#gameplay {
+    display: none;
+}
+
+#graph-container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    background-color: #f4f4f4;
+    border: 1px solid #ccc;
+}
+
+.node {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 12px;
+    user-select: none;
+}
+
+canvas {
+    border: 1px solid black;
 }

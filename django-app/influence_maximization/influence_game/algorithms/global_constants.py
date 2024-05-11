@@ -1,0 +1,8 @@
+import random
+
+SCREEN_SIZE = (800, 600)
+NUM_NODES = random.randint(28, 52)
+NODE_RADIUS = 12
+CONTROL_MARK_RADIUS = 3
+LINE_THICKNESS = 2
+FONT_SIZE = 24

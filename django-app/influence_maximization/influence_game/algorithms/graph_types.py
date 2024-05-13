@@ -29,15 +29,15 @@ def random_proximity_probability():
 
 def tree():
     G = nx.full_rary_tree(4, NUM_NODES)
-    return scale_nodes_to_screen(nx.kamada_kawai_layout(G)), G.edges
+    return list(scale_nodes_to_screen(nx.kamada_kawai_layout(G))), list(G.edges)
 
 def ladder():
     G = nx.ladder_graph(int(NUM_NODES / 2))
-    return 2 * int(NUM_NODES/2), scale_nodes_to_screen(nx.spring_layout(G)), G.edges
+    return 2 * int(NUM_NODES/2), list(scale_nodes_to_screen(nx.spring_layout(G))), list(G.edges)
 
 def cycle():
     G = nx.cycle_graph(NUM_NODES)
-    return scale_nodes_to_screen(nx.circular_layout(G)), G.edges
+    return list(scale_nodes_to_screen(nx.circular_layout(G))), list(G.edges)
 
 def square_lattice():
     length = int(np.floor(np.sqrt(NUM_NODES)))
@@ -45,7 +45,7 @@ def square_lattice():
     H = nx.grid_graph(dim=(length, length))
     node_cords = list(H.nodes)
     G = nx.relabel_nodes(H, {node_cords[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
 def hexagon_lattice():
     n = int(np.rint(np.sqrt(NUM_NODES)) / 2)
@@ -55,7 +55,7 @@ def hexagon_lattice():
     node_names = [*nx.get_node_attributes(H, 'pos')]
     node_cords = [*nx.get_node_attributes(H, 'pos').values()]
     G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
 def triangle_lattice():
     n = int(np.sqrt(NUM_NODES))
@@ -67,7 +67,7 @@ def triangle_lattice():
     node_names = [*nx.get_node_attributes(H, 'pos')]
     node_cords = [*nx.get_node_attributes(H, 'pos').values()]
     G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
 #Helper Functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 def scale_nodes_to_screen(positions):

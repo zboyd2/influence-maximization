@@ -4,7 +4,12 @@ function startGame() {
     const player2 = document.getElementById('player2').value;
 
     document.getElementById('startup-screen').style.display = 'none';
-    document.getElementById('gameplay').style.display = 'block';
+    document.getElementById('gameplay').style.display = 'flex';
+
+    const player1Text = document.getElementById('player1-indicator');
+    player1Text.textContent = `Player 1: ${player1.charAt(0).toUpperCase() + player1.slice(1)}`;
+    const player2Text = document.getElementById('player2-indicator');
+    player2Text.textContent = `Player 2: ${player2.charAt(0).toUpperCase() + player2.slice(1)}`;
 
     switch (graphType) {
         case 'distribution':
@@ -38,6 +43,8 @@ function startGame() {
 }
 
 let graphNodes = [];
+let opinions = [];
+let playerTurn = 1;
 
 function plotNode(x, y) {
     const canvas = document.getElementById('game-canvas');
@@ -75,6 +82,7 @@ function plotGraph(nodes, edges) {
 
     coordsArray.forEach((coords, index) => {
         graphNodes.push({x: coords[0], y: coords[1], radius: nodeRadius, id: index});
+        opinions.push(0);
     });
 
     edgeArray.forEach(edge => {
@@ -84,6 +92,32 @@ function plotGraph(nodes, edges) {
     coordsArray.forEach((coords, index) => {
         plotNode(coords[0], coords[1]);
     });
+}
+
+function updateTurn() {
+    const turnBox = document.getElementById('turn-notification');
+    if (playerTurn == 1) {
+        playerTurn = 2;
+    } else {
+        playerTurn = 1;
+    }
+
+    turnBox.textContent = `Player ${playerTurn}'s Turn`;
+}
+
+function askCoach() {
+
+}
+
+function resetGame() {
+
+}
+
+function updateScoreBar() {
+    const scoreBar = document.getElementById('score-bar');
+    const redPercent = 0;
+    const bluePercent = 100;
+    scoreBar.style.backgroundImage = 'linear-gradient(to right, right ${redPercent}%, blue ${bluePercent}%)';
 }
 
 function callDistribution() {

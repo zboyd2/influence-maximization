@@ -45,8 +45,25 @@
     </div>
 
     <div id="gameplay">
-        <div id="graph-container">
-            <canvas id="game-canvas" width="800" height="600"></canvas>
+        <div id="graph-and-side">
+            <div id="score-container">
+                <h1>Score</h1>
+                <div id="score-bar"></div>
+            </div>
+            <div id="graph-container">
+                <canvas id="game-canvas" width="800" height="600"></canvas>
+            </div>
+            <div id="buttons-and-turn">
+                <div id="player-indicators">
+                    <div id="player1-indicator"></div>
+                    <div id="player2-indicator"></div>
+                </div>
+                <div id="turn-notification" class="turn-box">Player 1's Turn</div>
+                <div id="buttons-container">
+                    <button onclick="askCoach()">Ask Coach?</button>
+                    <button onclick="resetGame()">Reset</button>
+                </div>
+            </div>
         </div>
     </div>
 

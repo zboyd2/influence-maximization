@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path
-from influence_game.views import home, distribution_view, tree_view, ladder_view, square_view, hexagon_view, triangle_view, cycle_view, random_proximity_view
+from influence_game.views import *
 
 urlpatterns = [
     path('', home, name='home'),

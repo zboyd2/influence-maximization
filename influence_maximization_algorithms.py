@@ -1,8 +1,5 @@
-
 import numpy as np
-
-import alternatingStep_Wilson
-
+from global_constants import TURNS_PER_PLAYER
 
 def get_influence(graph_laplacian, config):
     """This function takes in the graph Laplacian and the previously
@@ -38,11 +35,21 @@ def get_influence(graph_laplacian, config):
     # Add influence of each node in the specific boundary set
     influence_1 += team_1_bd.sum()
 
+    # Calculate influence of team 0 using same approach as above
+    team_0_nodes = config[0::2]
+    team_0_bd = np.zeros(graph_laplacian.shape[0]).astype(int)
+    team_0_bd[team_0_nodes] = 1
+    influence_0 = np.linalg.lstsq(lsc, -b @ team_0_bd[config], rcond=None)[0].sum()
+    influence_0 += team_0_bd.sum()
+
+    '''
+    More efficient way to calculate influece_0, but it only works if network is connected
+    
     # Calculate the influence of the other team
     influence_0 = graph_laplacian.shape[0] - influence_1
+    '''
 
     return np.array((influence_0, influence_1))
-
 
 def greedy_algorithm(graph_laplacian, config, nodes_per_team):
     """This function takes in the graph Laplacian, the previously
@@ -75,20 +82,14 @@ def greedy_algorithm(graph_laplacian, config, nodes_per_team):
 
     if config.shape[0] == 0:  # First move
         return np.argmax(np.diag(graph_laplacian))
-
     elif config.shape[0] >= nodes_per_team * 2:  # Game is over
         return None
-
     else:  # Not first move
         for n in nodes_remaining:  # Check each node to see which one is best
-
-            new_val = get_influence(graph_laplacian,
-                                    np.append(config, n).astype(int))[turn]
-
+            new_val = get_influence(graph_laplacian, np.append(config, n).astype(int))[turn]
             if new_val > best_value:
                 best_value = new_val
                 best_node = n
-
     return best_node
 
 
@@ -303,7 +304,6 @@ def minimax_algorithm_vs_greedy(graph_laplacian, config, nodes_per_team, mover="
     """
 
     def minimax_recursive_step(graph_laplacian, config, nodes_per_team):
-
         if type(config) is not np.ndarray:
             config = np.array(config)
 
@@ -403,10 +403,7 @@ def random_graph_generator(num_nodes, num_graphs=1000):
 
     return all_graphs
 
-
-
 # Matchups #############################################################################################################
-
 
 def matchup_greedy_greedy(graph_laplacian):
     """This function takes in a graph Laplacian and returns the
@@ -469,7 +466,6 @@ def matchup_minimax_minimax(graph_laplacian):
 
 # Testing ##############################################################################################################
 
-
 def generate_matchup_influences(num_nodes=10, num_graphs=1000):
     """This function generates a set of random graph Laplacians and then
     runs the four matchup functions on each graph. It returns the resulting
@@ -512,27 +508,7 @@ def generate_matchup_influences(num_nodes=10, num_graphs=1000):
     return greedy_greedy, greedy_minimax, minimax_greedy, minimax_minimax
 
 
-
-
-
-
-# graph = random_graph(10)
-# print(minimax_algorithm_vs_greedy(alternatingStep_Wilson.ex7, np.array([1, 2]), 2, mover="first"))
-# print(minimax_algorithm(alternatingStep_Wilson.ex7, np.array([1, 2]), 2))
-
-
-
-
-
-
-
-
-
-
-
-########################################################################################################################
 # Algorithms for arbitrary nodes_per_team ##############################################################################
-
 
 def gui_easy_opponent(graph_laplacian, config, depth):
     return np.random.choice(np.setdiff1d(np.arange(graph_laplacian.shape[0]), config))
@@ -575,10 +551,7 @@ def gui_greedy_algorithm(graph_laplacian, config, depth):
 
     else:  # Not first move
         for n in nodes_remaining:  # Check each node to see which one is best
-
-            new_val = get_influence(graph_laplacian,
-                                    np.append(config, n).astype(int))[turn]
-
+            new_val = get_influence(graph_laplacian, np.append(config, n).astype(int))[turn]
             if new_val > best_value:
                 best_value = new_val
                 best_node = n
@@ -614,7 +587,7 @@ def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
 
         turn = config.shape[0] % 2  # 0 for maximizing team, 1 for minimizing team
 
-        if depth == 0:
+        if depth == 0 or config.shape[0] >= TURNS_PER_PLAYER * 2:
             return get_influence(graph_laplacian, config.astype(int))[0], None
 
         nodes_remaining = np.setdiff1d(np.arange(graph_laplacian.shape[0]), config)
@@ -650,5 +623,3 @@ def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
             return value, best_node
 
     return minimax_recursive_step(config, depth, -np.inf, np.inf)[1]
-
-

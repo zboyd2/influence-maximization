@@ -1,4 +1,13 @@
-function startGame() {
+let graphNodes = [];
+let adjList = [];
+let opinions = [];
+let controls = [];
+let playerTurn = 1;
+let turnCount = 0;
+const NUM_TURNS = 3;
+let gameRunning = true;
+
+async function startGame() {
     const graphType = document.getElementById('graph-type').value;
     const player1 = document.getElementById('player1').value;
     const player2 = document.getElementById('player2').value;
@@ -7,51 +16,194 @@ function startGame() {
     document.getElementById('gameplay').style.display = 'flex';
 
     const player1Text = document.getElementById('player1-indicator');
-    player1Text.textContent = `Player 1: ${player1.charAt(0).toUpperCase() + player1.slice(1)}`;
     const player2Text = document.getElementById('player2-indicator');
-    player2Text.textContent = `Player 2: ${player2.charAt(0).toUpperCase() + player2.slice(1)}`;
+    player1Text.textContent = `Player 1: ${player1}`;
+    player2Text.textContent = `Player 2: ${player2}`;
 
-    switch (graphType) {
-        case 'distribution':
-            callDistribution();
-            break;
-        case 'tree':
-            callTree();
-            break;
-        case 'ladder':
-            callLadder();
-            break;
-        case 'square':
-            callSquare();
-            break;
-        case 'hexagon':
-            callHexagon();
-            break;
-        case 'triangle':
-            callTriangle();
-            break;
-        case 'cycle':
-            callCycle();
-            break;
-        case 'random-proximity':
-            callRandomProximity();
-            break;
-        default:
-            alert('Invalid graph type');
-            break;
+    try {
+        const data = await fetchGraphData(graphType);
+        plotGraph(data.nodes, data.edges);
+        initializeGraphState(data.nodes.length);
+        mainGame();
+    } catch (error) {
+        alert('Failed to fetch graph data!');
     }
 }
 
-let graphNodes = [];
-let opinions = [];
-let playerTurn = 1;
+async function fetchGraphData(graphType) {
+    let url;
+    switch (graphType) {
+        case 'distribution':
+            url = '/api/distribution';
+            break;
+        case 'tree':
+            url = '/api/tree';
+            break;
+        case 'ladder':
+            url = '/api/ladder';
+            break;
+        case 'square':
+            url = '/api/square';
+            break;
+        case 'hexagon':
+            url = '/api/hexagon';
+            break;
+        case 'triangle':
+            url = '/api/triangle';
+            break;
+        case 'cycle':
+            url = '/api/cycle';
+            break;
+        case 'random_proximity':
+            url = '/api/random_proximity';
+            break;
+        default:
+            return Promise.reject('Invalid graph type');
+    }
 
-function plotNode(x, y) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        alert('Network response was invalid');
+    }
+    return await response.json();
+}
+
+function initializeGraphState(numNodes) {
+    opinions = Array(numNodes).fill(0);
+    controls = Array(numNodes).fill(null);
+    playerTurn = 1;
+    turnCount = 0;
+    gameRunning = true;
+    updateTurnNotification();
+}
+
+function mainGame() {
+    if (!gameRunning) return;
+
+    const canvas = document.getElementById('game-canvas');
+    canvas.addEventListener('click', handleCanvasClick);
+}
+
+function handleCanvasClick(event) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+
+    let nodeClicked = false;
+
+    graphNodes.forEach(node => {
+        if (Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2) <= node.radius && controls[node.id] === null) {
+            controls[node.id] = playerTurn;
+            updateOpinions();
+            updateCanvas();
+            updateScoreBar();
+            nodeClicked = true;
+        }
+    });
+
+    if (nodeClicked) {
+        updateTurn();
+    }
+
+    // alert(opinions.toString());
+}
+
+function updateOpinions() {
+    let notPrecise = true;
+    
+    while (notPrecise) {
+        let newOpinions = [];
+
+        for (let i = 0; i < graphNodes.length; i++) {
+            const neighborOpinions = adjList[i].map(j => opinions[j]);
+            if (controls[i] !== null) {
+                newOpinions[i] = controls[i] * 2 - 1;
+            } else if (neighborOpinions.length > 0) {
+                newOpinions[i] = neighborOpinions.reduce((sum, val) => sum + val, 0) / neighborOpinions.length;
+            } else {
+                newOpinions[i] = opinions[i];
+            }
+        }
+        
+        let opinionsPrecise = true;
+        for (let i = 0; i < opinions.length; i++) {
+            if (Math.abs(opinions[i] - newOpinions[i]) > 1e-6) {
+                opinionsPrecise = false;
+                break;
+            }
+        }
+
+        if (opinionsPrecise) {
+            notPrecise = false;
+        }
+
+        opinions = newOpinions.slice();
+    }
+}
+
+function updateTurn() {
+    if (turnCount < NUM_TURNS * 2 - 1) {
+        playerTurn = (playerTurn === 1) ? -1 : 1;
+        turnCount++;
+        updateTurnNotification();
+    } else {
+        determineWinner();
+        gameRunning = false;
+    }
+}
+
+function updateTurnNotification() {
+    const turnBox = document.getElementById('turn-notification');
+    const playerNum = (playerTurn === 1) ? 1 : 2;
+    turnBox.textContent = `Player ${playerNum}'s Turn`;
+}
+
+async function determineWinner() {
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
+    let winner;
+    if (averageOpinion > 0) {
+        winner = "Player 1";
+    } else if (averageOpinion < 0) {
+        winner = "Player 2";
+    } else {
+        winner = "Draw";
+    }
+
+    await sleep(1000);
+    alert(`${winner} Wins!`);
+}
+
+function plotGraph(nodes, edges) {
+    graphNodes = nodes.map((coords, index) => ({
+        x: coords[0],
+        y: coords[1],
+        radius: 12,
+        id: index
+    }));
+    adjList = Array(nodes.length).fill().map(() => []);
+    edges.forEach(edge => {
+        adjList[edge[0]].push(edge[1]);
+        adjList[edge[1]].push(edge[0]);
+    });
+    edges.forEach(edge => plotEdge(edge[0], edge[1]));
+    graphNodes.forEach(node => plotNode(node.x, node.y, 0));
+}
+
+function plotNode(x, y, opinion) {
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const radius = 12;
 
-    ctx.fillStyle = 'purple';
+    // Converts opinion from -1 to 1 to rgb value between blue and red
+    const shiftedOpinion = (opinion + 1) / 2;
+    ctx.fillStyle = `rgb(${255 * shiftedOpinion}, 0, ${255 * (1 - shiftedOpinion)})`;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
     ctx.fill();
@@ -72,37 +224,19 @@ function plotEdge(nodeid1, nodeid2) {
     ctx.stroke();
 }
 
-function plotGraph(nodes, edges) {
-    const nodeCoords = JSON.stringify(nodes);
-    const coordsArray = JSON.parse(nodeCoords);
+function updateCanvas() {
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const edgeList = JSON.stringify(edges);
-    const edgeArray = JSON.parse(edgeList);
-    const nodeRadius = 12;
-
-    coordsArray.forEach((coords, index) => {
-        graphNodes.push({x: coords[0], y: coords[1], radius: nodeRadius, id: index});
-        opinions.push(0);
+    adjList.forEach((neighbors, index) => {
+        neighbors.forEach(neighbor => plotEdge(index, neighbor));
     });
-
-    edgeArray.forEach(edge => {
-        plotEdge(edge[0], edge[1]);
-    });
-
-    coordsArray.forEach((coords, index) => {
-        plotNode(coords[0], coords[1]);
-    });
-}
-
-function updateTurn() {
-    const turnBox = document.getElementById('turn-notification');
-    if (playerTurn == 1) {
-        playerTurn = 2;
-    } else {
-        playerTurn = 1;
+    for (let i = 0; i < graphNodes.length; i++) {
+        const node = graphNodes[i];
+        plotNode(node.x, node.y, opinions[i]);
     }
-
-    turnBox.textContent = `Player ${playerTurn}'s Turn`;
+    // Add highlighted node drawing from askCoach()
 }
 
 function askCoach() {
@@ -110,110 +244,25 @@ function askCoach() {
 }
 
 function resetGame() {
-
+    // opinions = [];
+    // controls = [];
+    playerTurn = 1;
+    turnCount = 0;
+    NUM_TURNS = 3;
+    initializeGraphState(data.nodes.length);
+    updateCanvas();
+    updateScoreBar();
 }
 
 function updateScoreBar() {
     const scoreBar = document.getElementById('score-bar');
-    const redPercent = 0;
-    const bluePercent = 100;
-    scoreBar.style.backgroundImage = 'linear-gradient(to right, right ${redPercent}%, blue ${bluePercent}%)';
-}
+    const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
 
-function callDistribution() {
-    fetch('/api/distribution/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
+    const scoreText = document.getElementById('score');
+    scoreText.textContent = averageOpinion.toFixed(3).toString();
 
-function callTree() {
-    fetch('/api/tree/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callLadder() {
-    fetch('/api/ladder/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callSquare() {
-    fetch('/api/square/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callHexagon() {
-    fetch('/api/hexagon/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callTriangle() {
-    fetch('/api/triangle/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callCycle() {
-    fetch('/api/cycle/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
-}
-
-function callRandomProximity() {
-    fetch('/api/random_proximity/')
-    .then(response => response.json())
-    .then(data => {
-        plotGraph(data.nodes, data.edges);
-    })
-    .catch(error => {
-        console.error('Error fetching data:', error);
-        alert('Failed to fetch graph data!');
-    });
+    const adjustedOpinion = (45 * averageOpinion) + 50;
+    scoreBar.style.backgroundImage = `linear-gradient(to top, red 0%, red ${adjustedOpinion - 5}%, blue ${adjustedOpinion + 5}%, blue 100%)`;
 }
 
 const canvas = document.getElementById('game-canvas');
@@ -234,24 +283,4 @@ canvas.addEventListener('mousemove', function(event) {
     });
 
     canvas.style.cursor = isCursorOverNode ? 'pointer' : 'default';
-});
-
-canvas.addEventListener('click', function(event) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    const x = (event.clientX - rect.left) * scaleX;
-    const y = (event.clientY - rect.top) * scaleY;
-
-    let cursorOverNode = false;
-
-    graphNodes.forEach(node => {
-        if (Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2) <= node.radius) {
-            alert('Clicked on node ' + node.id);
-            cursorOverNode = true;
-        }
-    });
-
-    canvas.style.cursor = cursorOverNode ? 'pointer' : 'default';
 });

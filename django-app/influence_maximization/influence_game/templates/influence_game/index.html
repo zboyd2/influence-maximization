@@ -18,27 +18,27 @@
             <option value="distribution">Distribution</option>
             <option value="tree">Tree</option>
             <option value="ladder">Ladder</option>
-            <option value="square">Square</option>
-            <option value="hexagon">Hexagon</option>
-            <option value="triangle">Triangle</option>
+            <option value="square">Square Lattice</option>
+            <option value="hexagon">Hexagon Lattice</option>
+            <option value="triangle">Triangle Lattice</option>
             <option value="cycle">Cycle</option>
-            <option value="random-proximity">Random Proximity</option>
+            <option value="random_proximity">Random Proximity</option>
         </select>
 
         <label for="player1">Player 1:</label>
         <select id="player1">
-            <option value="human">Human</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            <option value="Human">Human</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
         </select>
 
         <label for="player2">Player 2:</label>
         <select id="player2">
-            <option value="human">Human</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
+            <option value="Human">Human</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
         </select>
 
         <button onclick="startGame()">Start Game</button>
@@ -47,18 +47,19 @@
     <div id="gameplay">
         <div id="graph-and-side">
             <div id="score-container">
-                <h1>Score</h1>
-                <div id="score-bar"></div>
+                <h1>Score:</h1>
+                <div id="score">0</div>
+                <div id="score-bar" class="score-bar"></div>
             </div>
             <div id="graph-container">
                 <canvas id="game-canvas" width="800" height="600"></canvas>
             </div>
             <div id="buttons-and-turn">
+                <div id="turn-notification" class="turn-box">Player 1's Turn</div>
                 <div id="player-indicators">
                     <div id="player1-indicator"></div>
                     <div id="player2-indicator"></div>
                 </div>
-                <div id="turn-notification" class="turn-box">Player 1's Turn</div>
                 <div id="buttons-container">
                     <button onclick="askCoach()">Ask Coach?</button>
                     <button onclick="resetGame()">Reset</button>

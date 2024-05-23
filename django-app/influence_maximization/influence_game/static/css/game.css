@@ -63,12 +63,18 @@ button:hover {
     margin-right: 20px;
 }
 
-#score-bar {
+.score-bar {
     width: 20px;
     height: 500px;
-    background-image: linear-gradient(to bottom, red 0%, red 45%, blue 55%, blue 100%);
+    background-image: linear-gradient(to top, blue 0%, blue 45%, red 55%, red 100%);
     border: 1px solid black;
     margin-top: 20px;
+    transition: background-image 1s ease-in-out;
+}
+
+#score {
+    font-weight: bold;
+    font-size: 30px;
 }
 
 #graph-container {
@@ -98,7 +104,7 @@ canvas {
 }
 
 #player-indicators {
-    /* margin-bottom: 10px; */
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -113,11 +119,11 @@ canvas {
 }
 
 #player1-indicator {
-    background-color: #007BFF;
+    background-color: #FF4136;
 }
 
 #player2-indicator {
-    background-color: #FF4136;
+    background-color: #007BFF;
 }
 
 .turn-box {
@@ -127,5 +133,5 @@ canvas {
     border-radius: 5px;
     margin: 5px 0;
     background-color: #737474;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }

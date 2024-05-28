@@ -2,10 +2,9 @@ import networkx as nx
 import numpy as np
 import random
 import scipy.stats as ss
-from influence_game.algorithms.global_constants import SCREEN_SIZE, NODE_RADIUS, NUM_NODES
 
-X_MARGIN = int(SCREEN_SIZE[0] * 0.10)
-Y_MARGIN = int(SCREEN_SIZE[1] * 0.12)
+NODE_RADIUS = 12
+SCREEN_SIZE = (800, 600)
 
 '''
 Graph Generation Functions
@@ -16,40 +15,40 @@ Each function returns:
     -The number of nodes IF IT WAS CHANGED by the graph generation
 '''
 
-def random_proximity():
-    nodes = random_node_placement(NUM_NODES)
+def random_proximity(N):
+    nodes = random_node_placement(N)
     edge_threshold = np.linalg.norm(np.array(SCREEN_SIZE)) * 0.095  #Set edge threshold as a fraction of the diagonal
-    edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
+    edges = [(i, j) for i in range(N) for j in range(i+1, N) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
     return nodes, edges
 
-def random_proximity_probability():
-    nodes = random_node_placement(NUM_NODES)
-    edges = [(i, j) for i in range(NUM_NODES) for j in range(i+1, NUM_NODES) if 2 * (1 - ss.norm.cdf((np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) / (NODE_RADIUS * 2)), loc=0, scale=3)) > random.random()]
+def random_proximity_probability(N):
+    nodes = random_node_placement(N)
+    edges = [(i, j) for i in range(N) for j in range(i+1, N) if 2 * (1 - ss.norm.cdf((np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) / (NODE_RADIUS * 2)), loc=0, scale=3)) > random.random()]
     return nodes, edges
 
-def tree():
-    G = nx.full_rary_tree(4, NUM_NODES)
+def tree(N):
+    G = nx.full_rary_tree(4, N)
     return list(scale_nodes_to_screen(nx.kamada_kawai_layout(G))), list(G.edges)
 
-def ladder():
-    G = nx.ladder_graph(int(NUM_NODES / 2))
-    return 2 * int(NUM_NODES/2), list(scale_nodes_to_screen(nx.spring_layout(G))), list(G.edges)
+def ladder(N):
+    G = nx.ladder_graph(int(N / 2))
+    return 2 * int(N/2), list(scale_nodes_to_screen(nx.spring_layout(G))), list(G.edges)
 
-def cycle():
-    G = nx.cycle_graph(NUM_NODES)
+def cycle(N):
+    G = nx.cycle_graph(N)
     return list(scale_nodes_to_screen(nx.circular_layout(G))), list(G.edges)
 
-def square_lattice():
-    length = int(np.floor(np.sqrt(NUM_NODES)))
+def square_lattice(N):
+    length = int(np.floor(np.sqrt(N)))
     new_node_count = int(length ** 2)
     H = nx.grid_graph(dim=(length, length))
     node_cords = list(H.nodes)
     G = nx.relabel_nodes(H, {node_cords[i] : i  for i in range(new_node_count)})
     return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
-def hexagon_lattice():
-    n = int(np.rint(np.sqrt(NUM_NODES)) / 2)
-    m = int(np.rint((NUM_NODES - 2 * n) / (2 * n + 2)))
+def hexagon_lattice(N):
+    n = int(np.rint(np.sqrt(N)) / 2)
+    m = int(np.rint((N - 2 * n) / (2 * n + 2)))
     new_node_count = 2 * (n + n * m + m)
     H = nx.hexagonal_lattice_graph(n, m)
     node_names = [*nx.get_node_attributes(H, 'pos')]
@@ -57,11 +56,11 @@ def hexagon_lattice():
     G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(new_node_count)})
     return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
-def triangle_lattice():
-    n = int(np.sqrt(NUM_NODES))
+def triangle_lattice(N):
+    n = int(np.sqrt(N))
     if n % 2 == 0:
         n += 1
-    m = int(np.rint((2 * NUM_NODES - 2 * n - 2) / (n + 1)))
+    m = int(np.rint((2 * N - 2 * n - 2) / (n + 1)))
     new_node_count = int(0.5 * n * m + 0.5 * m + n + 1)
     H = nx.triangular_lattice_graph(n, m)
     node_names = [*nx.get_node_attributes(H, 'pos')]
@@ -77,9 +76,10 @@ def scale_nodes_to_screen(positions):
         the nodes with keys being the node names and values being coordinate tuples
 
     Returns:
-        a list of node coordinate tuples, scaled to fit well in the graphgame screen
+        a list of node coordinate tuples, scaled to fit well in the game screen
     """
-
+    X_MARGIN = int(SCREEN_SIZE[0] * 0.14)
+    Y_MARGIN = int(SCREEN_SIZE[1] * 0.16)
     x_range = SCREEN_SIZE[0] - 2 * X_MARGIN
     y_range = SCREEN_SIZE[1] - 2 * Y_MARGIN
     pos_list = positions.values()
@@ -94,6 +94,8 @@ def scale_nodes_to_screen(positions):
     return [((x - min_inputed_x) * (x_range) / (input_x_range) + X_MARGIN, (y - min_inputed_y) * (y_range) / (input_y_range) + Y_MARGIN) for x, y in pos_list]
 
 def random_node_placement(N):
+    X_MARGIN = int(SCREEN_SIZE[0] * 0.14)
+    Y_MARGIN = int(SCREEN_SIZE[1] * 0.16)
     nodes = []
     while len(nodes) < N:
         new_node = (random.randint(X_MARGIN, SCREEN_SIZE[0] - X_MARGIN), random.randint(Y_MARGIN, SCREEN_SIZE[1] - Y_MARGIN))

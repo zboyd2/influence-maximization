@@ -25,6 +25,12 @@
             <option value="random_proximity">Random Proximity</option>
         </select>
 
+        <label for="node-count">Number of Nodes:</label>
+        <div id="node-count-container">
+            <span id="node-count-display">10</span>
+            <input type="range" id="node-count" min="10" max="100" value="10" oninput="updateNodeCountDisplay(this.value)">
+        </div>
+
         <label for="player1">Player 1:</label>
         <select id="player1">
             <option value="Human">Human</option>
@@ -39,6 +45,14 @@
             <option value="Easy">Easy</option>
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
+        </select>
+
+        <label for="turn-count">Turns per Player:</label>
+        <select id="turn-count">
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
         </select>
 
         <button onclick="startGame()">Start Game</button>

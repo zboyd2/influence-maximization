@@ -4,13 +4,19 @@ let opinions = [];
 let controls = [];
 let playerTurn = 1;
 let turnCount = 0;
-const NUM_TURNS = 3;
+let NUM_TURNS = 3;
 let gameRunning = true;
+
+function updateNodeCountDisplay(value) {
+    document.getElementById('node-count-display').textContent = value;
+}
 
 async function startGame() {
     const graphType = document.getElementById('graph-type').value;
     const player1 = document.getElementById('player1').value;
     const player2 = document.getElementById('player2').value;
+    const nodeCount = parseInt(document.getElementById('node-count').value);
+    NUM_TURNS = parseInt(document.getElementById('turn-count').value);
 
     document.getElementById('startup-screen').style.display = 'none';
     document.getElementById('gameplay').style.display = 'flex';
@@ -21,7 +27,7 @@ async function startGame() {
     player2Text.textContent = `Player 2: ${player2}`;
 
     try {
-        const data = await fetchGraphData(graphType);
+        const data = await fetchGraphData(graphType, nodeCount);
         plotGraph(data.nodes, data.edges);
         initializeGraphState(data.nodes.length);
         mainGame();
@@ -30,32 +36,32 @@ async function startGame() {
     }
 }
 
-async function fetchGraphData(graphType) {
+async function fetchGraphData(graphType, nodeCount) {
     let url;
     switch (graphType) {
         case 'distribution':
-            url = '/api/distribution';
+            url = `/api/distribution?nodes=${nodeCount}`;
             break;
         case 'tree':
-            url = '/api/tree';
+            url = `/api/tree?nodes=${nodeCount}`;
             break;
         case 'ladder':
-            url = '/api/ladder';
+            url = `/api/ladder?nodes=${nodeCount}`;
             break;
         case 'square':
-            url = '/api/square';
+            url = `/api/square?nodes=${nodeCount}`;
             break;
         case 'hexagon':
-            url = '/api/hexagon';
+            url = `/api/hexagon?nodes=${nodeCount}`;
             break;
         case 'triangle':
-            url = '/api/triangle';
+            url = `/api/triangle?nodes=${nodeCount}`;
             break;
         case 'cycle':
-            url = '/api/cycle';
+            url = `/api/cycle?nodes=${nodeCount}`;
             break;
         case 'random_proximity':
-            url = '/api/random_proximity';
+            url = `/api/random_proximity?nodes=${nodeCount}`;
             break;
         default:
             return Promise.reject('Invalid graph type');
@@ -261,7 +267,7 @@ function updateScoreBar() {
     const scoreText = document.getElementById('score');
     scoreText.textContent = averageOpinion.toFixed(3).toString();
 
-    const adjustedOpinion = (45 * averageOpinion) + 50;
+    const adjustedOpinion = 45 * averageOpinion + 50;
     scoreBar.style.backgroundImage = `linear-gradient(to top, red 0%, red ${adjustedOpinion - 5}%, blue ${adjustedOpinion + 5}%, blue 100%)`;
 }
 

@@ -17,13 +17,88 @@ body {
     text-align: center;
 }
 
-select {
+select, input[type="range"] {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
     margin-bottom: 20px;
     border-radius: 5px;
     border: 1px solid #ccc;
+}
+
+input[type="range"] {
+    height: 30px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    background: #ddd;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    background: #007BFF;
+    border: 1px solid #007BFF;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -8px;
+}
+
+input[type="range"]::-moz-range-track {
+    height: 10px;
+    background: #ddd;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    background: #007BFF;
+    border: 1px solid #007BFF;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+input[type="range"]::-ms-track {
+    width: 100%;
+    height: 10px;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+}
+
+input[type="range"]::-ms-fill-lower {
+    background: #ddd;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+input[type="range"]::-ms-fill-upper {
+    background: #ddd;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+input[type="range"]::-ms-thumb {
+    width: 25px;
+    height: 25px;
+    background: #007BFF;
+    border: 1px solid #007BFF;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+input[type="range"]:focus {
+    outline: none;
 }
 
 button {
@@ -134,4 +209,20 @@ canvas {
     margin: 5px 0;
     background-color: #737474;
     margin-bottom: 5px;
+}
+
+#node-count-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#node-count-display {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+#node-count {
+    font-weight: bold;
+    width: 100%;
 }

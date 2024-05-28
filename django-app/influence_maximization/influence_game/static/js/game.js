@@ -249,14 +249,31 @@ function askCoach() {
 
 }
 
-function resetGame() {
-    // opinions = [];
-    // controls = [];
+async function resetGame() {
+    const graphType = document.getElementById('graph-type').value;
+    const nodeCount = parseInt(document.getElementById('node-count').value);
+
+    graphNodes = [];
+    adjList = [];
+    opinions = [];
+    controls = [];
     playerTurn = 1;
     turnCount = 0;
-    NUM_TURNS = 3;
-    initializeGraphState(data.nodes.length);
-    updateCanvas();
+    gameRunning = true;
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    try {
+        const data = await fetchGraphData(graphType, nodeCount);
+        plotGraph(data.nodes, data.edges);
+        initializeGraphState(data.nodes.length);
+        mainGame();
+    } catch (error) {
+        alert('Failed to fetch graph data!');
+    }
+    
     updateScoreBar();
 }
 

@@ -199,10 +199,10 @@ function plotGraph(nodes, edges) {
         adjList[edge[1]].push(edge[0]);
     });
     edges.forEach(edge => plotEdge(edge[0], edge[1]));
-    graphNodes.forEach(node => plotNode(node.x, node.y, 0));
+    graphNodes.forEach(node => plotNode(node.x, node.y, 0, null));
 }
 
-function plotNode(x, y, opinion) {
+function plotNode(x, y, opinion, control) {
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const radius = 12;
@@ -212,6 +212,18 @@ function plotNode(x, y, opinion) {
     ctx.fillStyle = `rgb(${255 * shiftedOpinion}, 0, ${255 * (1 - shiftedOpinion)})`;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+
+    if (control !== null) {
+        const controlColor = (control === 1) ? 'white' : 'black';
+        drawControlMark(ctx, x, y, radius / 4, controlColor);
+    }
+}
+
+function drawControlMark(ctx, x, y, size, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, 2 * Math.PI);
     ctx.fill();
 }
 
@@ -240,7 +252,7 @@ function updateCanvas() {
     });
     for (let i = 0; i < graphNodes.length; i++) {
         const node = graphNodes[i];
-        plotNode(node.x, node.y, opinions[i]);
+        plotNode(node.x, node.y, opinions[i], controls[i]);
     }
     // Add highlighted node drawing from askCoach()
 }
@@ -273,7 +285,7 @@ async function resetGame() {
     } catch (error) {
         alert('Failed to fetch graph data!');
     }
-    
+
     updateScoreBar();
 }
 

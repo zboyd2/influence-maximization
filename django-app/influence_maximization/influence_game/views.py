@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+import json
+import numpy as np
 import influence_game.algorithms.graph_types as gt
+import influence_game.algorithms.influence_maximization_algorithms as im
 
 
 def get_num_nodes(request):
@@ -121,3 +124,24 @@ def random_proximity_view(request):
         return JsonResponse(response_data)
     else:
         return JsonResponse({'error': 'Invalid HTTP Method'}, status=405)
+
+
+def bot_move(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        laplacian = np.array(data['laplacian'])
+        config = np.array(data['config'])
+        difficulty = data['difficulty']
+        num_turns = int(data['numTurns'])
+
+        if difficulty == 'easy':
+            move = int(im.gui_easy_opponent(laplacian, config))
+        elif difficulty == 'medium':
+            move = int(im.gui_greedy_algorithm(laplacian, config))
+        elif difficulty == 'hard':
+            move = int(im.gui_minimax_algorithm_opt(laplacian, config, num_turns))
+        else:
+            return JsonResponse({'error': 'Invalid difficulty'}, status=400)
+        return JsonResponse({'move': move})
+
+    return JsonResponse({'error': 'Invalid Method'}, status=405)

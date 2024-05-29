@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/triangle/', triangle_view, name='triangle'),
     path('api/cycle/', cycle_view, name='cycle'),
     path('api/random_proximity/', random_proximity_view, name='random_proximity'),
+    path('api/bot_move/', bot_move, name='bot_move'),
 ]

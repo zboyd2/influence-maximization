@@ -2,6 +2,7 @@ let graphNodes = [];
 let adjList = [];
 let opinions = [];
 let controls = [];
+let config = [];
 let playerTurn = 0;
 let turnCount = 0;
 let numTurns = 3;
@@ -22,15 +23,22 @@ async function startGame() {
     document.getElementById('gameplay').style.display = 'flex';
 
     const player1Text = document.getElementById('player1-indicator');
+    const player1Display = player1.charAt(0).toUpperCase() + player1.slice(1);
     const player2Text = document.getElementById('player2-indicator');
-    player1Text.textContent = `Player 1: ${player1}`;
-    player2Text.textContent = `Player 2: ${player2}`;
+    const player2Display = player2.charAt(0).toUpperCase() + player2.slice(1);
+
+    player1Text.textContent = `Player 1: ${player1Display}`;
+    player2Text.textContent = `Player 2: ${player2Display}`;
 
     try {
         const data = await fetchGraphData(graphType, nodeCount);
         plotGraph(data.nodes, data.edges);
         initializeGraphState(data.nodes.length);
         mainGame();
+
+        if (player1 !== 'human') {
+            await makeBotMove(player1);
+        }
     } catch (error) {
         alert('Failed to fetch graph data!');
     }
@@ -87,7 +95,11 @@ function mainGame() {
     if (!gameRunning) return;
 
     const canvas = document.getElementById('game-canvas');
-    canvas.addEventListener('click', handleCanvasClick);
+    const player1 = document.getElementById('player1').value;
+    const player2 = document.getElementById('player2').value;
+    if (player1 === 'human' || player2 === 'human') {
+        canvas.addEventListener('click', handleCanvasClick);
+    }
 }
 
 function handleCanvasClick(event) {
@@ -103,6 +115,7 @@ function handleCanvasClick(event) {
     graphNodes.forEach(node => {
         if (Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2) <= node.radius && controls[node.id] === null) {
             controls[node.id] = playerTurn;
+            config.push(node.id);
             updateOpinions();
             updateCanvas();
             updateScoreBar();
@@ -151,11 +164,80 @@ function updateOpinions() {
     // alert(opinions.toString());
 }
 
-function updateTurn() {
+function getGraphLaplacian() {
+    const numNodes = adjList.length;
+
+    let degreeMatrix = Array.from({ length: numNodes }, () => 0);
+    let laplacianMatrix = Array.from({ length: numNodes }, () => Array(numNodes).fill(0));
+
+    // Fill degree matrix and adjacency matrix
+    for (let i = 0; i < numNodes; i++) {
+        degreeMatrix[i] = adjList[i].length;
+        adjList[i].forEach(j => {
+            laplacianMatrix[i][j] = -1;
+        });
+    }
+
+    // Fill the diagonal of the Laplacian matrix with the degrees
+    for (let i = 0; i < numNodes; i++) {
+        laplacianMatrix[i][i] = degreeMatrix[i];
+    }
+
+    return laplacianMatrix;
+}
+
+async function getBotMove(difficulty) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const laplacian = getGraphLaplacian();
+    const response = await fetch('/api/bot_move/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ laplacian, config, difficulty, numTurns })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch bot move.');
+    }
+
+    const data = await response.json();
+    return data.move;
+}
+
+async function makeBotMove(difficulty) {
+    try {
+        const move = await getBotMove(difficulty);
+        if (difficulty === 'easy' || difficulty === 'medium') {
+            await sleep(500);
+        }
+
+        controls[move] = playerTurn;
+        config.push(move);
+        updateOpinions();
+        updateCanvas();
+        updateScoreBar();
+        updateTurn();
+    } catch (error) {
+        console.error('Error fetching bot move:', error);
+        alert('Failed to get bot move.');
+    }
+}
+
+async function updateTurn() {
     if (turnCount < numTurns * 2 - 1) {
         playerTurn = (playerTurn === 0) ? 1 : 0;
         turnCount++;
         updateTurnNotification();
+
+        const player1 = document.getElementById('player1').value;
+        const player2 = document.getElementById('player2').value;
+
+        if ((playerTurn === 0 && player1 !== 'human') || (playerTurn === 1 && player2 !== 'human')) {
+            const difficulty = (playerTurn === 0) ? player1 : player2;
+            await makeBotMove(difficulty);
+        }
     } else {
         determineWinner();
         gameRunning = false;
@@ -168,11 +250,11 @@ function updateTurnNotification() {
     turnBox.textContent = `Player ${playerNum}'s Turn`;
 }
 
-async function determineWinner() {
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
+async function determineWinner() {
     const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
     let winner;
     if (averageOpinion < 0) {
@@ -270,6 +352,7 @@ async function resetGame() {
     adjList = [];
     opinions = [];
     controls = [];
+    config = [];
     playerTurn = 0;
     turnCount = 0;
     gameRunning = true;
@@ -283,6 +366,11 @@ async function resetGame() {
         plotGraph(data.nodes, data.edges);
         initializeGraphState(data.nodes.length);
         mainGame();
+
+        const player1 = document.getElementById('player1').value;
+        if (player1 !== 'human') {
+            await makeBotMove(player1);
+        }
     } catch (error) {
         alert('Failed to fetch graph data!');
     }

@@ -1,5 +1,5 @@
 import numpy as np
-from global_constants import TURNS_PER_PLAYER
+
 
 def get_influence(graph_laplacian, config):
     """This function takes in the graph Laplacian and the previously
@@ -50,6 +50,7 @@ def get_influence(graph_laplacian, config):
     '''
 
     return np.array((influence_0, influence_1))
+
 
 def greedy_algorithm(graph_laplacian, config, nodes_per_team):
     """This function takes in the graph Laplacian, the previously
@@ -112,6 +113,7 @@ def minimax_algorithm(graph_laplacian, config, nodes_per_team):
         best_node (int): The best node to add to the boundary set
     """
 
+
     def minimax_recursive_step(graph_laplacian, config, nodes_per_team):
 
         if type(config) is not np.ndarray:
@@ -170,6 +172,7 @@ def minimax_algorithm_opt(graph_laplacian, config, nodes_per_team, depth=np.inf)
     Returns:
         best_node (int): The best node to add to the boundary set
     """
+
 
     def minimax_recursive_step(config, depth, alpha, beta):
 
@@ -238,6 +241,7 @@ def rev_minimax_algorithm_opt(graph_laplacian, config, nodes_per_team, depth=np.
         best_node (int): The best node to add to the boundary set
     """
 
+
     def minimax_recursive_step(config, depth, alpha, beta):
 
         if type(config) is not np.ndarray:
@@ -302,6 +306,7 @@ def minimax_algorithm_vs_greedy(graph_laplacian, config, nodes_per_team, mover="
     Returns:
         best_node (int): The best node to add to the boundary set
     """
+
 
     def minimax_recursive_step(graph_laplacian, config, nodes_per_team):
         if type(config) is not np.ndarray:
@@ -403,7 +408,9 @@ def random_graph_generator(num_nodes, num_graphs=1000):
 
     return all_graphs
 
+
 # Matchups #############################################################################################################
+
 
 def matchup_greedy_greedy(graph_laplacian):
     """This function takes in a graph Laplacian and returns the
@@ -466,6 +473,7 @@ def matchup_minimax_minimax(graph_laplacian):
 
 # Testing ##############################################################################################################
 
+
 def generate_matchup_influences(num_nodes=10, num_graphs=1000):
     """This function generates a set of random graph Laplacians and then
     runs the four matchup functions on each graph. It returns the resulting
@@ -510,11 +518,12 @@ def generate_matchup_influences(num_nodes=10, num_graphs=1000):
 
 # Algorithms for arbitrary nodes_per_team ##############################################################################
 
-def gui_easy_opponent(graph_laplacian, config, depth):
+
+def gui_easy_opponent(graph_laplacian, config):
     return np.random.choice(np.setdiff1d(np.arange(graph_laplacian.shape[0]), config))
 
 
-def gui_greedy_algorithm(graph_laplacian, config, depth):
+def gui_greedy_algorithm(graph_laplacian, config):
     """This function takes in the graph Laplacian, the previously
     selected boundary nodes as an iterable, and the number of nodes
     per team. It returns the best node to add to the boundary set
@@ -526,8 +535,6 @@ def gui_greedy_algorithm(graph_laplacian, config, depth):
 
         config (ndarray): The previously selected boundary nodes
         in sequential order alternating team
-
-        nodes_per_team (int): The number of nodes per team
 
     Returns:
         best_node (int): The best node to add to the boundary set
@@ -559,7 +566,7 @@ def gui_greedy_algorithm(graph_laplacian, config, depth):
     return best_node
 
 
-def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
+def gui_minimax_algorithm_opt(graph_laplacian, config, num_turns, depth=3):
     """ Optimized using alpha-beta pruning.
 
     This function takes in the graph Laplacian, the previously
@@ -574,11 +581,10 @@ def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
         config (ndarray): The previously selected boundary nodes
         in sequential order alternating team
 
-        nodes_per_team (int): The number of nodes per team
-
     Returns:
         best_node (int): The best node to add to the boundary set
     """
+
 
     def minimax_recursive_step(config, depth, alpha, beta):
 
@@ -587,7 +593,7 @@ def gui_minimax_algorithm_opt(graph_laplacian, config, depth=3):
 
         turn = config.shape[0] % 2  # 0 for maximizing team, 1 for minimizing team
 
-        if depth == 0 or config.shape[0] >= TURNS_PER_PLAYER * 2:
+        if depth == 0 or config.shape[0] >= num_turns * 2:
             return get_influence(graph_laplacian, config.astype(int))[0], None
 
         nodes_remaining = np.setdiff1d(np.arange(graph_laplacian.shape[0]), config)

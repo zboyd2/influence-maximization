@@ -194,11 +194,11 @@ canvas {
 }
 
 #player1-indicator {
-    background-color: #FF4136;
+    background-color: #007BFF;
 }
 
 #player2-indicator {
-    background-color: #007BFF;
+    background-color: #FF4136;
 }
 
 .turn-box {

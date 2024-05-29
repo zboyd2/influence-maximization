@@ -2,9 +2,9 @@ let graphNodes = [];
 let adjList = [];
 let opinions = [];
 let controls = [];
-let playerTurn = 1;
+let playerTurn = 0;
 let turnCount = 0;
-let NUM_TURNS = 3;
+let numTurns = 3;
 let gameRunning = true;
 
 function updateNodeCountDisplay(value) {
@@ -16,7 +16,7 @@ async function startGame() {
     const player1 = document.getElementById('player1').value;
     const player2 = document.getElementById('player2').value;
     const nodeCount = parseInt(document.getElementById('node-count').value);
-    NUM_TURNS = parseInt(document.getElementById('turn-count').value);
+    numTurns = parseInt(document.getElementById('turn-count').value);
 
     document.getElementById('startup-screen').style.display = 'none';
     document.getElementById('gameplay').style.display = 'flex';
@@ -77,7 +77,7 @@ async function fetchGraphData(graphType, nodeCount) {
 function initializeGraphState(numNodes) {
     opinions = Array(numNodes).fill(0);
     controls = Array(numNodes).fill(null);
-    playerTurn = 1;
+    playerTurn = 0;
     turnCount = 0;
     gameRunning = true;
     updateTurnNotification();
@@ -148,11 +148,12 @@ function updateOpinions() {
 
         opinions = newOpinions.slice();
     }
+    // alert(opinions.toString());
 }
 
 function updateTurn() {
-    if (turnCount < NUM_TURNS * 2 - 1) {
-        playerTurn = (playerTurn === 1) ? -1 : 1;
+    if (turnCount < numTurns * 2 - 1) {
+        playerTurn = (playerTurn === 0) ? 1 : 0;
         turnCount++;
         updateTurnNotification();
     } else {
@@ -163,7 +164,7 @@ function updateTurn() {
 
 function updateTurnNotification() {
     const turnBox = document.getElementById('turn-notification');
-    const playerNum = (playerTurn === 1) ? 1 : 2;
+    const playerNum = (playerTurn === 0) ? 1 : 2;
     turnBox.textContent = `Player ${playerNum}'s Turn`;
 }
 
@@ -174,16 +175,16 @@ async function determineWinner() {
 
     const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
     let winner;
-    if (averageOpinion > 0) {
-        winner = "Player 1";
-    } else if (averageOpinion < 0) {
-        winner = "Player 2";
+    if (averageOpinion < 0) {
+        winner = "Player 1 Wins!";
+    } else if (averageOpinion > 0) {
+        winner = "Player 2 Wins!";
     } else {
         winner = "Draw";
     }
 
     await sleep(1000);
-    alert(`${winner} Wins!`);
+    alert(`${winner}`);
 }
 
 function plotGraph(nodes, edges) {
@@ -269,7 +270,7 @@ async function resetGame() {
     adjList = [];
     opinions = [];
     controls = [];
-    playerTurn = 1;
+    playerTurn = 0;
     turnCount = 0;
     gameRunning = true;
 
@@ -296,7 +297,7 @@ function updateScoreBar() {
     const scoreText = document.getElementById('score');
     scoreText.textContent = averageOpinion.toFixed(3).toString();
 
-    const adjustedOpinion = 45 * averageOpinion + 50;
+    const adjustedOpinion = (45 * averageOpinion) + 50;
     scoreBar.style.backgroundImage = `linear-gradient(to top, red 0%, red ${adjustedOpinion - 5}%, blue ${adjustedOpinion + 5}%, blue 100%)`;
 }
 

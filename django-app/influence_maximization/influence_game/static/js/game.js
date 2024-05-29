@@ -126,8 +126,6 @@ function handleCanvasClick(event) {
     if (nodeClicked) {
         updateTurn();
     }
-
-    // alert(opinions.toString());
 }
 
 function updateOpinions() {
@@ -161,7 +159,6 @@ function updateOpinions() {
 
         opinions = newOpinions.slice();
     }
-    // alert(opinions.toString());
 }
 
 function getGraphLaplacian() {
@@ -209,9 +206,7 @@ async function getBotMove(difficulty) {
 async function makeBotMove(difficulty) {
     try {
         const move = await getBotMove(difficulty);
-        if (difficulty === 'easy' || difficulty === 'medium') {
-            await sleep(500);
-        }
+        await sleep(500);
 
         controls[move] = playerTurn;
         config.push(move);
@@ -256,6 +251,7 @@ function sleep(ms) {
 
 async function determineWinner() {
     const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
+
     let winner;
     if (averageOpinion < 0) {
         winner = "Player 1 Wins!";
@@ -276,11 +272,13 @@ function plotGraph(nodes, edges) {
         radius: 12,
         id: index
     }));
+
     adjList = Array(nodes.length).fill().map(() => []);
     edges.forEach(edge => {
         adjList[edge[0]].push(edge[1]);
         adjList[edge[1]].push(edge[0]);
     });
+
     edges.forEach(edge => plotEdge(edge[0], edge[1]));
     graphNodes.forEach(node => plotNode(node.x, node.y, 0, null));
 }
@@ -333,15 +331,40 @@ function updateCanvas() {
     adjList.forEach((neighbors, index) => {
         neighbors.forEach(neighbor => plotEdge(index, neighbor));
     });
+
     for (let i = 0; i < graphNodes.length; i++) {
         const node = graphNodes[i];
         plotNode(node.x, node.y, opinions[i], controls[i]);
     }
-    // Add highlighted node drawing from askCoach()
 }
 
-function askCoach() {
+function highlightNode(nodeid) {
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const node = graphNodes.find(node => node.id === nodeid);
 
+    if (node) {
+        const ringRadius = node.radius + 10;
+        ctx.strokeStyle = '#90EE90';
+        ctx.lineWidth = 6;
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, ringRadius, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+}
+
+async function askCoach() {
+    const player1 = document.getElementById('player1').value;
+    const player2 = document.getElementById('player2').value;
+
+    // Verifies that the bot isn't doing its turn
+    if ((playerTurn === 0 && player1 !== 'human') || (playerTurn === 1 && player2 !== 'human')) {
+        return;
+    }
+
+    const move = await getBotMove('hard');
+    highlightNode(move);
 }
 
 async function resetGame() {
@@ -366,6 +389,7 @@ async function resetGame() {
         plotGraph(data.nodes, data.edges);
         initializeGraphState(data.nodes.length);
         mainGame();
+        updateScoreBar();
 
         const player1 = document.getElementById('player1').value;
         if (player1 !== 'human') {
@@ -374,8 +398,6 @@ async function resetGame() {
     } catch (error) {
         alert('Failed to fetch graph data!');
     }
-
-    updateScoreBar();
 }
 
 function updateScoreBar() {

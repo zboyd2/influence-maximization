@@ -29,3 +29,4 @@ __pycache__/alternatingStep_Wilson.cpython-311.pyc
 django-app/influence_maximization/influence_game/new_gui/influence_maximization_algorithms.py
 django-app/influence_maximization/influence_game/new_gui/gui.py
 django-app/influence_maximization/influence_game/new_gui/global_constants.py
+django-app/influence_maximization/influence_game/new_gui/graph_types.py

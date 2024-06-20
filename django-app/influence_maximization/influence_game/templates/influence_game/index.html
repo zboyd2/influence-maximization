@@ -16,6 +16,7 @@
 
         <label for="graph-type">Choose a Graph Type:</label>
         <select id="graph-type">
+            <option value="random_proximity">Random Proximity</option>
             <option value="distribution">Distribution</option>
             <option value="tree">Tree</option>
             <option value="ladder">Ladder</option>
@@ -23,13 +24,11 @@
             <option value="hexagon">Hexagon Lattice</option>
             <option value="triangle">Triangle Lattice</option>
             <option value="cycle">Cycle</option>
-            <option value="random_proximity">Random Proximity</option>
         </select>
 
-        <label for="node-count">Number of Nodes:</label>
+        <label for="node-count">Number of Nodes: <span id="node-count-display">55</span></label>
         <div id="node-count-container">
-            <span id="node-count-display">10</span>
-            <input type="range" id="node-count" min="10" max="100" value="10" oninput="updateNodeCountDisplay(this.value)">
+            <input type="range" id="node-count" min="10" max="100" value="55" oninput="updateNodeCountDisplay(this.value)">
         </div>
 
         <label for="player1">Player 1:</label>
@@ -60,25 +59,42 @@
     </div>
 
     <div id="gameplay">
-        <div id="graph-and-side">
-            <div id="score-container">
-                <h1>Score:</h1>
-                <div id="score">0</div>
-                <div id="score-bar" class="score-bar"></div>
-            </div>
-            <div id="graph-container">
-                <canvas id="game-canvas" width="800" height="600"></canvas>
-            </div>
-            <div id="buttons-and-turn">
-                <div id="turn-notification" class="turn-box">Player 1's Turn</div>
-                <div id="player-indicators">
-                    <div id="player1-indicator"></div>
-                    <div id="player2-indicator"></div>
+        <div id="decorative-box">
+            <div id="graph-and-side">
+                <div class="box-wrapper">
+                    <div id="score-container">
+                        <div id="score-box" class="box-wrapper">
+                            <div class="score-label">Score:</div>
+                            <div id="score">0</div>
+                            <div id="score-bar" class="score-bar"></div>
+                        </div>
+                    </div>
                 </div>
-                <div id="buttons-container">
-                    <button onclick="askCoach()">Ask Coach?</button>
-                    <button onclick="resetGame()">Reset</button>
+                <div id="graph-container">
+                    <canvas id="game-canvas" width="800" height="600"></canvas>
                 </div>
+                <div class="box-wrapper">
+                    <div id="buttons-and-turn">
+                        <div id="turn-notification">Player 1's Turn</div>
+                        <div id="player-indicators">
+                            <div id="player1-indicator"></div>
+                            <div id="player2-indicator"></div>
+                        </div>
+                        <div id="buttons-container">
+                            <button onclick="askCoach()">Ask Coach?</button>
+                            <button onclick="undoMove()">Undo</button>
+                            <button onclick="resetGame()">Reset</button>
+                            <button onclick="startupScreen()">Main Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="winner-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" onclick="closeModal()">&times;</span>
+                <p id="winner-message"></p>
+                <button onclick="closeModal()">OK</button>
             </div>
         </div>
     </div>

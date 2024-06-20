@@ -520,6 +520,8 @@ def generate_matchup_influences(num_nodes=10, num_graphs=1000):
 
 
 def gui_easy_opponent(graph_laplacian, config):
+    if graph_laplacian.size == 0:
+        return 0
     return np.random.choice(np.setdiff1d(np.arange(graph_laplacian.shape[0]), config))
 
 
@@ -551,10 +553,10 @@ def gui_greedy_algorithm(graph_laplacian, config):
     best_value = -np.inf
 
     if config.shape[0] == 0:  # First move
-        return np.argmax(np.diag(graph_laplacian))
-
-    # elif config.shape[0] >= nodes_per_team * 2:  # Game is over
-    #     return None
+        try:
+            return np.argmax(np.diag(graph_laplacian))
+        except ValueError:
+            pass
 
     else:  # Not first move
         for n in nodes_remaining:  # Check each node to see which one is best

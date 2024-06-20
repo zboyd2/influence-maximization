@@ -3,10 +3,13 @@ let adjList = [];
 let opinions = [];
 let controls = [];
 let config = [];
-let playerTurn = 0;
+let gameStates = [];
+let playerTurn = 1;
 let turnCount = 0;
 let numTurns = 3;
 let gameRunning = true;
+let updatingOpinions = false;
+let botMakingMove = false;
 
 function updateNodeCountDisplay(value) {
     document.getElementById('node-count-display').textContent = value;
@@ -85,10 +88,17 @@ async function fetchGraphData(graphType, nodeCount) {
 function initializeGraphState(numNodes) {
     opinions = Array(numNodes).fill(0);
     controls = Array(numNodes).fill(null);
-    playerTurn = 0;
+
+    gameStates.push({
+        opinions: opinions.slice(),
+        controls: controls.slice()
+    });
+
+    playerTurn = 1;
     turnCount = 0;
     gameRunning = true;
     updateTurnNotification();
+    updateScoreBar();
 }
 
 function mainGame() {
@@ -102,7 +112,9 @@ function mainGame() {
     }
 }
 
-function handleCanvasClick(event) {
+async function handleCanvasClick(event) {
+    if (!gameRunning || updatingOpinions || botMakingMove) return;
+    
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -110,27 +122,27 @@ function handleCanvasClick(event) {
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
 
-    let nodeClicked = false;
-
-    graphNodes.forEach(node => {
+    // Iterate in reverse order to prioritize the topmost node
+    for (let i = graphNodes.length - 1; i >= 0; i--) {
+        const node = graphNodes[i];
         if (Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2) <= node.radius && controls[node.id] === null) {
             controls[node.id] = playerTurn;
             config.push(node.id);
-            updateOpinions();
+
+            await updateOpinions();
             updateCanvas();
             updateScoreBar();
-            nodeClicked = true;
+            updateTurn();
+            break;
         }
-    });
-
-    if (nodeClicked) {
-        updateTurn();
     }
 }
 
-function updateOpinions() {
+async function updateOpinions() {
+    updatingOpinions = true;
     let notPrecise = true;
-    
+    let count = 0;
+
     while (notPrecise) {
         let newOpinions = [];
 
@@ -153,12 +165,26 @@ function updateOpinions() {
             }
         }
 
+        opinions = newOpinions.slice();
+        updateCanvas();
+        updateScoreBar();
+
         if (opinionsPrecise) {
             notPrecise = false;
         }
 
-        opinions = newOpinions.slice();
+        // Adjust to control how fast the influence spreads
+        const influenceSpeed = (-0.002 * count) + 7;
+        await sleep(influenceSpeed);
+        count++;
     }
+
+    gameStates.push({
+        opinions: opinions.slice(),
+        controls: controls.slice()
+    });
+
+    updatingOpinions = false;
 }
 
 function getGraphLaplacian() {
@@ -196,7 +222,7 @@ async function getBotMove(difficulty) {
     });
 
     if (!response.ok) {
-        throw new Error('Failed to fetch bot move.');
+        throw new Error('Failed to fetch bot move.' + response.status);
     }
 
     const data = await response.json();
@@ -204,65 +230,94 @@ async function getBotMove(difficulty) {
 }
 
 async function makeBotMove(difficulty) {
+    if (updatingOpinions) return;
+    botMakingMove = true;
+
     try {
         const move = await getBotMove(difficulty);
-        await sleep(500);
+        await sleep(400);
 
         controls[move] = playerTurn;
         config.push(move);
-        updateOpinions();
+
+        await updateOpinions();
         updateCanvas();
         updateScoreBar();
         updateTurn();
     } catch (error) {
         console.error('Error fetching bot move:', error);
-        alert('Failed to get bot move.');
+        alert('Failed to get bot move.' + error.message);
     }
+
+    botMakingMove = false;
+}
+
+function isBotMove() {
+    const player1 = document.getElementById('player1').value;
+    const player2 = document.getElementById('player2').value;
+    return (playerTurn === 1 && player1 !== 'human') || (playerTurn === 0 && player2 !== 'human');
 }
 
 async function updateTurn() {
-    if (turnCount < numTurns * 2 - 1) {
-        playerTurn = (playerTurn === 0) ? 1 : 0;
-        turnCount++;
+    turnCount++;
+    if (turnCount < numTurns * 2) {
+        playerTurn = (playerTurn === 1) ? 0 : 1;
         updateTurnNotification();
 
-        const player1 = document.getElementById('player1').value;
-        const player2 = document.getElementById('player2').value;
-
-        if ((playerTurn === 0 && player1 !== 'human') || (playerTurn === 1 && player2 !== 'human')) {
-            const difficulty = (playerTurn === 0) ? player1 : player2;
+        if (isBotMove()) {
+            const player1 = document.getElementById('player1').value;
+            const player2 = document.getElementById('player2').value;
+            const difficulty = (playerTurn === 1) ? player1 : player2;
             await makeBotMove(difficulty);
         }
     } else {
-        determineWinner();
+        updateTurnNotification();
+        await determineWinner();
         gameRunning = false;
     }
 }
 
 function updateTurnNotification() {
     const turnBox = document.getElementById('turn-notification');
-    const playerNum = (playerTurn === 0) ? 1 : 2;
-    turnBox.textContent = `Player ${playerNum}'s Turn`;
+    let playerNum = (playerTurn === 1) ? 1 : 2;
+    
+    if (turnCount === numTurns * 2) {
+        turnBox.textContent = 'Game Over';
+    } else {
+        turnBox.textContent = `Player ${playerNum}'s Turn`;
+    }
 }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function showModal(message) {
+    const modal = document.getElementById('winner-modal');
+    const messageElement = document.getElementById('winner-message');
+    messageElement.textContent = message;
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    const modal = document.getElementById('winner-modal');
+    modal.style.display = 'none';
+}
+
 async function determineWinner() {
     const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
 
     let winner;
-    if (averageOpinion < 0) {
+    if (averageOpinion > 0) {
         winner = "Player 1 Wins!";
-    } else if (averageOpinion > 0) {
+    } else if (averageOpinion < 0) {
         winner = "Player 2 Wins!";
     } else {
         winner = "Draw";
     }
 
-    await sleep(1000);
-    alert(`${winner}`);
+    await sleep(500);
+    showModal(winner);
 }
 
 function plotGraph(nodes, edges) {
@@ -328,14 +383,24 @@ function updateCanvas() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw edges
     adjList.forEach((neighbors, index) => {
         neighbors.forEach(neighbor => plotEdge(index, neighbor));
     });
 
-    for (let i = 0; i < graphNodes.length; i++) {
-        const node = graphNodes[i];
-        plotNode(node.x, node.y, opinions[i], controls[i]);
-    }
+    // Draw nodes without control
+    graphNodes.forEach((node, index) => {
+        if (controls[node.id] === null) {
+            plotNode(node.x, node.y, opinions[index], null);
+        }
+    });
+
+    // Draw nodes with control
+    graphNodes.forEach((node, index) => {
+        if (controls[node.id] !== null) {
+            plotNode(node.x, node.y, opinions[index], controls[node.id]);
+        }
+    });
 }
 
 function highlightNode(nodeid) {
@@ -345,7 +410,7 @@ function highlightNode(nodeid) {
 
     if (node) {
         const ringRadius = node.radius + 10;
-        ctx.strokeStyle = '#90EE90';
+        ctx.strokeStyle = '#36FF00';
         ctx.lineWidth = 6;
 
         ctx.beginPath();
@@ -359,7 +424,7 @@ async function askCoach() {
     const player2 = document.getElementById('player2').value;
 
     // Verifies that the bot isn't doing its turn
-    if ((playerTurn === 0 && player1 !== 'human') || (playerTurn === 1 && player2 !== 'human')) {
+    if (isBotMove()) {
         return;
     }
 
@@ -376,6 +441,7 @@ async function resetGame() {
     opinions = [];
     controls = [];
     config = [];
+    gameStates = [];
     playerTurn = 0;
     turnCount = 0;
     gameRunning = true;
@@ -400,15 +466,85 @@ async function resetGame() {
     }
 }
 
+async function undoMove() {
+    if (botMakingMove || updatingOpinions || gameStates.length <= 1) return;
+
+    // Handles when a bot is player 1
+    if (gameStates.length == 2 && ((playerTurn === 1 && player1 !== 'human') || (playerTurn === 0 && player2 !== 'human'))) return;
+
+    if (!gameRunning) {
+        gameRunning = true;
+        playerTurn = (playerTurn === 1) ? 0 : 1;
+    }
+
+    const player1 = document.getElementById('player1').value;
+    const player2 = document.getElementById('player2').value;
+
+
+    do {        
+        gameStates.pop();
+        const prevState = gameStates.at(-1);
+        opinions = prevState.opinions.slice();
+        controls = prevState.controls.slice();
+        config.pop();
+
+        turnCount--;
+        playerTurn = (playerTurn === 1) ? 0 : 1;
+    } while (isBotMove() && gameStates.length > 1);
+
+    updateCanvas();
+    updateScoreBar();
+    updateTurnNotification();
+
+    // If both players are bots, trigger the next move
+    if (isBotMove()) {
+        await sleep(500);
+        turnCount--;
+        playerTurn = (playerTurn === 1) ? 0 : 1;
+        updateTurn();
+    }
+}
+
+function startupScreen() {
+    document.getElementById('gameplay').style.display = 'none';
+    document.getElementById('startup-screen').style.display = 'block';
+
+    graphNodes = [];
+    adjList = [];
+    opinions = [];
+    controls = [];
+    config = [];
+    gameStates = [];
+    playerTurn = 1;
+    turnCount = 0;
+    gameRunning = true;
+    updatingOpinions = false;
+    botMakingMove = false;
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 function updateScoreBar() {
     const scoreBar = document.getElementById('score-bar');
+    const scoreBox = document.getElementById('score-box');
     const averageOpinion = opinions.reduce((sum, val) => sum + val, 0) / opinions.length;
 
     const scoreText = document.getElementById('score');
     scoreText.textContent = averageOpinion.toFixed(3).toString();
 
     const adjustedOpinion = (45 * averageOpinion) + 50;
-    scoreBar.style.backgroundImage = `linear-gradient(to top, red 0%, red ${adjustedOpinion - 5}%, blue ${adjustedOpinion + 5}%, blue 100%)`;
+    scoreBar.style.backgroundImage = `linear-gradient(to bottom, red 0%, red ${adjustedOpinion - 5}%, blue ${adjustedOpinion + 5}%, blue 100%)`;
+
+    // Change background color based on the score
+    if (averageOpinion > 0) {
+        scoreBox.style.backgroundColor = '#fdc0c0';
+    } else if (averageOpinion < 0) {
+        scoreBox.style.backgroundColor = '#c0c0fc';
+    } else {
+        scoreBox.style.backgroundColor = '#ccc';
+    }
 }
 
 const canvas = document.getElementById('game-canvas');

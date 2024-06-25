@@ -21,7 +21,7 @@ WHITE = (255, 255, 255)
 ROYAL = (0, 61, 165)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-BLACK = (0,0,0)
+BLACK = (0, 0, 0)
 NODE_COLORS = [RED, BLUE]
 CONTROL_MARK_COLORS = [WHITE, BLACK]
 
@@ -106,7 +106,6 @@ def get_graph_laplacian(edges):
     deg_mat = np.diag(np.sum(adj_mat, axis=1))
 
     return deg_mat - adj_mat  # Laplacian matrix
-
 
 # FUNCTIONS FOR DRAWING GUI - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = - = -
 corner_radius = 10

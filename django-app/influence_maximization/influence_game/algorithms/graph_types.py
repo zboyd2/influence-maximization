@@ -3,7 +3,8 @@ import numpy as np
 import random
 import scipy.stats as ss
 
-from global_constants import NODE_RADIUS
+NODE_RADIUS = 12
+SCREEN_SIZE = (800, 600)
 
 '''
 Graph Generation Functions
@@ -14,38 +15,38 @@ Each function returns:
     -The number of nodes IF IT WAS CHANGED by the graph generation
 '''
 
-def random_proxmity(N, SCREEN_SIZE):
-    nodes = random_node_placement(N, SCREEN_SIZE)
+def random_proximity(N):
+    nodes = random_node_placement(N)
     edge_threshold = np.linalg.norm(np.array(SCREEN_SIZE)) * 0.095  #Set edge threshold as a fraction of the diagonal
     edges = [(i, j) for i in range(N) for j in range(i+1, N) if np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) < edge_threshold]
     return nodes, edges
 
-def random_proximity_probability(N, SCREEN_SIZE):
-    nodes = random_node_placement(N, SCREEN_SIZE)
+def random_proximity_probability(N):
+    nodes = random_node_placement(N)
     edges = [(i, j) for i in range(N) for j in range(i+1, N) if 2 * (1 - ss.norm.cdf((np.linalg.norm(np.array(nodes[i]) - np.array(nodes[j])) / (NODE_RADIUS * 2)), loc=0, scale=3)) > random.random()]
     return nodes, edges
 
-def tree(N, SCREEN_SIZE):
+def tree(N):
     G = nx.full_rary_tree(4, N)
-    return scale_nodes_to_screen(nx.kamada_kawai_layout(G), SCREEN_SIZE), G.edges
+    return list(scale_nodes_to_screen(nx.kamada_kawai_layout(G))), list(G.edges)
 
-def ladder(N, SCREEN_SIZE):
+def ladder(N):
     G = nx.ladder_graph(int(N / 2))
-    return 2 * int(N/2), scale_nodes_to_screen(nx.spring_layout(G), SCREEN_SIZE), G.edges
+    return 2 * int(N/2), list(scale_nodes_to_screen(nx.spring_layout(G))), list(G.edges)
 
-def cycle(N, SCREEN_SIZE):
+def cycle(N):
     G = nx.cycle_graph(N)
-    return scale_nodes_to_screen(nx.circular_layout(G), SCREEN_SIZE), G.edges
+    return list(scale_nodes_to_screen(nx.circular_layout(G))), list(G.edges)
 
-def square_lattice(N, SCREEN_SIZE):
+def square_lattice(N):
     length = int(np.floor(np.sqrt(N)))
     new_node_count = int(length ** 2)
     H = nx.grid_graph(dim=(length, length))
     node_cords = list(H.nodes)
     G = nx.relabel_nodes(H, {node_cords[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}, SCREEN_SIZE), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
-def hexagon_lattice(N, SCREEN_SIZE):
+def hexagon_lattice(N):
     n = int(np.rint(np.sqrt(N)) / 2)
     m = int(np.rint((N - 2 * n) / (2 * n + 2)))
     new_node_count = 2 * (n + n * m + m)
@@ -53,9 +54,9 @@ def hexagon_lattice(N, SCREEN_SIZE):
     node_names = [*nx.get_node_attributes(H, 'pos')]
     node_cords = [*nx.get_node_attributes(H, 'pos').values()]
     G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}, SCREEN_SIZE), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
-def triangle_lattice(N, SCREEN_SIZE):
+def triangle_lattice(N):
     n = int(np.sqrt(N))
     if n % 2 == 0:
         n += 1
@@ -65,17 +66,17 @@ def triangle_lattice(N, SCREEN_SIZE):
     node_names = [*nx.get_node_attributes(H, 'pos')]
     node_cords = [*nx.get_node_attributes(H, 'pos').values()]
     G = nx.relabel_nodes(H, {node_names[i] : i  for i in range(new_node_count)})
-    return new_node_count, scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)}, SCREEN_SIZE), G.edges
+    return new_node_count, list(scale_nodes_to_screen({i: node_cords[i] for i in range(new_node_count)})), list(G.edges)
 
 #Helper Functions - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-def scale_nodes_to_screen(positions, SCREEN_SIZE):
+def scale_nodes_to_screen(positions):
     """
     Args:
         positions (dictionary): A dictionary that stores the positions of each of
         the nodes with keys being the node names and values being coordinate tuples
 
     Returns:
-        a list of node coordinate tuples, scaled to fit well in the graphgame screen
+        a list of node coordinate tuples, scaled to fit well in the game screen
     """
     X_MARGIN = int(SCREEN_SIZE[0] * 0.14)
     Y_MARGIN = int(SCREEN_SIZE[1] * 0.16)
@@ -92,7 +93,7 @@ def scale_nodes_to_screen(positions, SCREEN_SIZE):
     
     return [((x - min_inputed_x) * (x_range) / (input_x_range) + X_MARGIN, (y - min_inputed_y) * (y_range) / (input_y_range) + Y_MARGIN) for x, y in pos_list]
 
-def random_node_placement(N, SCREEN_SIZE):
+def random_node_placement(N):
     X_MARGIN = int(SCREEN_SIZE[0] * 0.14)
     Y_MARGIN = int(SCREEN_SIZE[1] * 0.16)
     nodes = []

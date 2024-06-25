@@ -20,17 +20,18 @@ def get_influence(graph_laplacian, config):
     config = config.astype(int)
     team_1_nodes = config[1::2]
     team_1_bd = np.zeros(graph_laplacian.shape[0]).astype(int)
-    team_1_bd[team_1_nodes] = 1
+    team_1_bd[team_1_nodes] = 1 
 
     # Create the Laplacian of the subgraph
     compliment = np.setdiff1d(np.arange(graph_laplacian.shape[0]), config)
-    lsc = graph_laplacian[compliment, :][:, compliment]
+    L = graph_laplacian[compliment, :][:, compliment]
 
     # Compute the boundary block matrix
-    b = graph_laplacian[compliment, :][:, config]
+    B = graph_laplacian[compliment, :][:, config]
 
     # Calculate the influence using least squares to solve the linear system
-    influence_1 = np.linalg.lstsq(lsc, -b @ team_1_bd[config], rcond=None)[0].sum()
+    t = team_1_bd[config]
+    influence_1 = np.linalg.lstsq(L, -B @ t, rcond=None)[0].sum()
 
     # Add influence of each node in the specific boundary set
     influence_1 += team_1_bd.sum()
@@ -39,7 +40,8 @@ def get_influence(graph_laplacian, config):
     team_0_nodes = config[0::2]
     team_0_bd = np.zeros(graph_laplacian.shape[0]).astype(int)
     team_0_bd[team_0_nodes] = 1
-    influence_0 = np.linalg.lstsq(lsc, -b @ team_0_bd[config], rcond=None)[0].sum()
+    t = team_0_bd[config]
+    influence_0 = np.linalg.lstsq(L, -B @ t, rcond=None)[0].sum()
     influence_0 += team_0_bd.sum()
 
     '''

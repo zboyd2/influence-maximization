@@ -124,6 +124,16 @@ button:hover {
     width: 100%;
 }
 
+#turn-info {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#turn-counter {
+    font-size: 20px;
+    font-weight: bold;
+}
+
 #decorative-box {
     display: flex;
     border: 2px solid #ccc;

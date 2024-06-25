@@ -222,7 +222,7 @@ async function getBotMove(difficulty) {
     });
 
     if (!response.ok) {
-        throw new Error('Failed to fetch bot move.' + response.status);
+        throw new Error('Failed to fetch bot move. ' + response.status);
     }
 
     const data = await response.json();
@@ -246,7 +246,7 @@ async function makeBotMove(difficulty) {
         updateTurn();
     } catch (error) {
         console.error('Error fetching bot move:', error);
-        alert('Failed to get bot move.' + error.message);
+        alert('Failed to get bot move. ' + error.message);
     }
 
     botMakingMove = false;
@@ -279,6 +279,7 @@ async function updateTurn() {
 
 function updateTurnNotification() {
     const turnBox = document.getElementById('turn-notification');
+    const turnCounter = document.getElementById('turn-counter');
     let playerNum = (playerTurn === 1) ? 1 : 2;
     
     if (turnCount === numTurns * 2) {
@@ -286,6 +287,8 @@ function updateTurnNotification() {
     } else {
         turnBox.textContent = `Player ${playerNum}'s Turn`;
     }
+
+    turnCounter.textContent = `Turn: ${Math.ceil((turnCount + 1) / 2)} / ${numTurns}`;
 }
 
 function sleep(ms) {
